@@ -1,0 +1,199 @@
+<Figure 1: Concatenation operators>
+
+/* Explicit (conventional) concatenation */
+dog = "Peke"
+say "Tom's " || dog || "s" /* output is "Tom's Pekes" */
+
+/* Abutment */
+dog = "Peke"
+say "Dick's "dog"s"        /* output is "Dick's Pekes" */
+
+/* Abutment with white space */
+dog = "Peke"
+say "Harry's" dog "s"      /* output is "Harry's Peke s" */
+
+/* Incorrect abutment of X */
+
+x = 'unknown'
+say 'C1'X                  /* Will display EBCDIC "A",
+                              not "C1unknown" */
+
+<end of Figure 1>
+
+----------------------------------------------------------------------
+
+<Figure 2: Continuation after argument separator>
+
+/* Example for OS/2 types */
+say value('X',,'OS2ENVIRONMENT') /* retrieves X with no side
+                                    effects */
+say value('X',,              ,   <bold comma>
+          'OS2ENVIRONMENT')      /* same as above */
+say value('X',,
+          'OS2ENVIRONMENT')      /* displays current value of X and then
+
+/* Example for TSO types */
+say outtrap('mystem',,'CONCAT') /* retrieves output to stem mystem */
+say outtrap('mystem',,       ,   <bold comma>
+          'CONCAT')              /* same as above */
+say outtrap('mystem',,
+          'CONCAT')              /* error: parameter 2 is not numeric! */
+
+<end of Figure 2>
+
+-------------------------------------------------------------------
+
+<Figure 3: Continuation after expression>
+
+/* Example for OS/2 types */
+'ECHO' 'DIR'                     /* displays 'DIR' */
+'ECHO'                      ,    <bold comma>
+'DIR'                            /* same as above */
+'ECHO'
+'DIR'                            /* displays directory */
+
+/* Example for TSO types */
+'HELP' 'LISTC'                   /* displays help for LISTC */
+'HELP'                      ,    <bold comma>
+'LISTC'                          /* same as above */
+'HELP'                           /* displays generic help   */
+'LISTC                           /* displays catalog   */
+
+<end of Figure 3>
+
+------------------------------------------------------
+
+<Figure 4: Misinterpreted keyword>
+
+text = 'tom dick harry'
+with = 'Ada Emmy Gracie Lise'
+/* we want to parse 'tom dick harry Ada Emmy Gracie Lise'
+   with 'with first rest' */
+parse value text with first rest      /* wrong ! */
+parse value text with with first rest /* also wrong ! */
+
+<End of Figure 4>
+
+----------------------------------------------------------------------
+
+<Figure 5: SIGNAL errors>
+
+do forever
+   signal BELL
+   whatever
+   BELL:
+   end                              /* an error will be detected here
+                                       because the SIGNAL logically
+                                       terminated the DO */
+
+<end of Figure 5>
+
+----------------------------------------------------------------------
+
+<Figure 6: Procedure isolation>
+
+saytime: PROCEDURE /* here I can get away with hiding all variables */
+   say time
+   return
+/* Note that there is no END statement ! */
+
+exit /* In case of fallthrough, since I can't use PROCEDURE */
+putdata:
+   parse arg name .
+   say name'='value(name)
+   return
+/* Note that there is no END statement ! */
+
+badstyle: PROCEDURE                 /* This entry has no access */
+badform:                            /* This entry has access    */
+...
+return
+/* Don't ever do this; it is an extremely dangerous style */
+
+<end of Figure 6>
+
+----------------------------------------------------------------------
+
+<Figure 7: I/O examples>
+
+/* In standard REXX */
+do lines(myfile)
+   myline=linein(myfile)
+   ...
+   end
+/* In OS/2 this would only read one line ! */
+
+/* In OS/2 SAA REXX */
+do while lines(myfile) /= 0
+   myline=linein(myfile)
+   ...
+   end
+
+/* In CMS and TSO REXX */
+'EXECIO *' name '(STEM MYSTEM. FINIS'
+do i = 1 to mystem.0
+   parse var mystem.i myline
+   ...
+   end
+
+<end of Figure 7>
+
+----------------------------------------------------------------------
+
+<Figure 8: Parse examples>
+
+parse source system invocation origin
+
+select
+   when system = 'OS/2' then do
+     ...
+     end
+   when system = 'TSO' then do
+     ...
+     end
+   otherwise do
+      say system 'is not supported by' origin
+      exit
+      end
+   end
+
+parse version name level date1 date2 date3 .
+select
+   when name = 'REXXSAA' then do
+      parse var level int '.' frac
+      if int > 3 then do
+         /* fast code for SAA level 4 goes here */
+         end
+      else do
+         /* slower code for older SAA level goes here */
+         end
+      end
+   when name = 'REXX370' then do
+      /* Code for CMS or TSO level of REXX  goes here */
+      end
+   otherwise do
+      say name 'is an unsupported REXX implementation'
+      exit
+      end
+   end
+
+<end of Figure 8>
+
+-------------------------------------------------------------------
+
+<Figure 9: Boot-disk examples>
+
+if REXXUTIL_loaded then do
+   stat=SysFileTree(filespec,'filelist.','FSO')
+   do i=1 to filespec.0
+      ...
+      end
+   end
+else do
+   'DIR' filespec '/F /O > WORK_FILE'
+      ...
+   end
+
+<end of Figure 9>
+
+-------------------------------------------------------------------

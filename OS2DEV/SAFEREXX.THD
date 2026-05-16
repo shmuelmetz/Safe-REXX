@@ -1,0 +1,45 @@
+#: 26537 S13/OS/2 Developer Mag. ù1 ù
+    19-Dec-93  14:46:37
+Sb: #26252-Possible article
+Fm: Shmuel (Seymour J.) Metz 71054,3066
+To: Dick Conklin 76711,1005
+
+My initial look at the guidlines leaves me puzzled. They seem to rule out
+articles pegged at the neophytes, but I've seen other articles in the
+Developer that were old hat for the journeymen among your readers. While my
+proposed article might have some value even for those with REXX experience, it
+is primarily pegged at those who are just learning it. Does that put it out of
+scope?
+
+I.    Introduction
+
+      A.  What is REXX
+
+      B.  Summary of pitfalls
+
+II.   Specific examples and recommended avoidance tactics
+
+      A.  Constants
+
+      B.  Continuation
+
+      C.  Lables and signal
+
+      D.  PROC
+
+      E.  Variable references
+
+III.  Recap
+
+
+I also have a couple of policy questions. I would like to submit the same, or
+a similar, article to the National Systems Programmers' Association (NaSPA)
+and to permit its dissemination by nonprofit BBSs and user groups. They are
+willing to allow this (in fact they did, for my prior article), but I have no
+idea what M-F regards as negotiable and what is set in concrete.
+
+
+         Shmuel (Seymour J.) Metz
+         Systems Programmer and JOAT
+
+[Sun, 19-DEC-1993, at  9:07a EST] in RECON 2.20

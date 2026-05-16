@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <title>RexxInfo.org</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Safe REXX Coding Practices">
+    <meta name="keywords" content="Rexx, scripting, programming language, safe programming, best coding practices">
+    <link rel="stylesheet" type="text/css" media="all" href="../../top_styles.css">
+
+  </head>
+
+  <body>
+
+    <div id="mycontent">
+      <div id="mycontproper">
+        <div id="color-change">
+          <header>
+
+          </header>
+
+          <main>
+
+
+<h1>Safe REXX on the Desktop,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Or<br>
+Will They Still Respect My Code in the Morning?
+</h1>
+
+<p> by <a href="http://mason.gmu.edu/~smetz3" target="_blank">Shmuel (Seymour J.) Metz</a> &nbsp;&copy; 1998, 2023</p>
+
+<br>
+<A href="#link_1">Introduction</A><BR>
+<A href="#link_2">What is REXX?</A><BR>
+<A href="#link_3">Summary of pitfalls</A><BR>
+<A href="#link_4">Specific examples and recommended avoidance tactics</A><BR>
+<A href="#link_5">Abutment</A><BR>
+<A href="#link_6">Continuation</A><BR>
+<A href="#link_7">Keywords</A><BR>
+<A href="#link_8">Labels and Signals</A><BR>
+<A href="#link_9">Parsing</A><BR>
+<A href="#link_10">Scoping Rules</A><BR>
+<A href="#link_11">Type and Range Checking</A><BR>
+<A href="#link_12">Uninitialized Variables used as Constants</A><BR>
+<A href="#link_13">Variable References</A><BR>
+<A href="#link_14">Compatibility and Environment Considerations</A><BR>
+<A href="#link_15">Address and the Default Environment</A><BR>
+<A href="#link_16">Environment Factors</A><BR>
+<A href="#link_17">I/O Model</A><BR>
+<A href="#link_18">Parse Sourse and Version</A><BR>
+<A href="#link_19">Variable Patterns</A><BR>
+<A href="#link_20">Recapitation</A><BR>
+<A href="#link_21">References</A><BR>
+<A href="#link_22">Notes and Trademarks</A><BR>
+<A href="#link_23">About the Author</A><BR>
+
+<br>
+<p>
+This article is intended for those who, although new to REXX, have some programming background and understand the basic concepts of command languages. Because of both its intrinsic merit and its status as the SAA Procedures Language, it is likely that you will be using REXX to some extent in the future. Although REXX is in many ways a good language, it has some pitfalls; an understanding of these pitfalls and of some easy ways to deal with them will make your experience of REXX more enjoyable. This article does not address Object Oriented REXX.
+</p>
+<br>
+
+<a id="link_1"><h2>INTRODUCTION</h2></a>
+
+<a id="link_2"><h3>What is REXX?</h3></a>
+
+<p>
+REXX is a language that was originally designed to replace the EXEC and EXEC2 command-macro languages in the CMS component of IBM 's VM/SP.  Since then it has spread to a large number of other platforms, including Unix, and has been designated by IBM as the SAA procedures language.  REXX has been used to implement a wide variety of applications beyond its original problem domain, including many of substantial size.
+</p>
+
+<a id="link_3"><h3>Summary of pitfalls</h3></a>
+
+<p>
+REXX has a number of features that can trap the unwary.  This does not mean that REXX is a bad language, just that you need to understand it for what it is, as you must for any other programming languages.  Some of these features are just language glitches, while in other cases they were added as the necessary price for greater expressive power.
+</p>
+<p>
+One of the easiest ways to run afoul of REXX is to be misled by superficial similarity with other languages, especially PL/I, TSO CLISTs and languages derived from them.  Make a conscious effort to learn REXX on its own terms, without relying on analogies with other languages.
+</p>
+<p>
+Other areas that may confuse the neophyte are the use of abutment for concatenation, the use of uninitialized variables as constants, the rules for continuation, parsing, the block structure and the way variable references are passed.  I will go into detail in the next section.
+</p>
+<p>
+You may write REXX code that must run on multiple platforms, or in different environments on the same platform.  REXX has some language features that may impede portability.  It also has some features that may be exploited to improve portability.  I will give some guidelines on how to ease migration between environments and between platforms.
+</p>
+<p>
+Of course, there are many generic principles of defensive programming that apply just as much to REXX as to any other language.  These include:
+</p>
+<ul>
+    <li>Use meaningful variable names</li>
+    <li>Use judicious comments</li>
+    <li>Use a consistent indentation style</li>
+</ul>
+
+<p>
+Although I will be discussing only issues and solutions specific to REXX, those generic principles are of equal importance in avoiding programming errors.
+</p>
+<br>
+
+<a id="link_4"><h2>SPECIFIC EXAMPLES AND RECOMMENDED AVOIDANCE TACTICS</h2></a>
+
+<p>
+Although REXX has a number of features that lend themselves to fast prototyping, it has a few pitfalls that can beset the unwary.
+</p>
+
+<a id="link_5"><h3>Abutment</h3></a>
+
+<p>
+Although REXX has a conventional concatenation operator (||), it also supports two other concatenation operators: abutment with white space and abutment without white space (See figure 1.) With abutment an expression is abutted against a second expression. If there is white space (e.g., blanks, tabs) between the two, the resulting value is formed by concatenating a <strong>single</strong> blank between the other two values; otherwise the result is formed by simple concatenation. It is a common beginner's error to add or remove a blank that appears to be irrelevant to the program's semantics, only to change the output.
+</p>
+<p>
+Another common error is to abut a literal string with a single character variable name. If the variable name is a valid suffix for a literal  string, e.g., X (for hexadecimal), it will be treated as part of the literal string, not as a variable reference. For this reason, among  others, it is best not to use one-character names for your variables.
+</p>
+<p>
+It is so easy to misuse abutment that some recommend not to use it at all. I consider that position to be extreme, since abutment is so convenient  and readable, but you should exercise caution and good judgement in its  use.
+</p>
+
+<h4>Figure 1: Concatenation operators</h4>
+<pre>
+<code>
+        /* Explicit (conventional) concatenation */
+        dog = "Peke"
+        say "Tom's " || dog || "s" /* output is "Tom's Pekes" */
+
+        /* Abutment */
+        dog = "Peke"
+        say "Dick's "dog"s"        /* output is "Dick's Pekes" */
+
+        /* Abutment with white space */
+        dog = "Peke"
+        say "Harry's" dog "s"      /* output is "Harry's Peke s" */
+
+        /* Incorrect abutment of X */
+        x = 'unknown'
+        say '41'X                  /* Will display ASCII "A",
+                                         not "41unknown" */
+
+</code>
+</pre>
+
+<p>
+Another common error is to abut a literal string with a single character variable name.  If the variable name is a valid suffix for a literal string, e.g., X (for hexadecimal), it will be treated as part of the literal string, not as a variable reference.  For this reason, among others, it is best not to use variable names only one character in length.  It is so easy to misuse abutment that some recommend not to use it at all. I consider that position to be extreme, since abutment is so convenient and readable, but you should exercise caution and good judgement in its use.
+</p>
+<a id="link_6"><h3>Continuation</h3></a>
+
+<p>
+REXX allows implicit continuation; a statement is treated as continued if it would otherwise be syntactically invalid.  You indicate explicit continuation with a trailing comma.  This presents two common pitfalls for the unwary.
+</p>
+<p>
+If you break a procedure invocation after a comma, the trailing comma will be treated as an explicit continuation request rather than as an argument separator.  In this situation you <strong>must</strong> add an additional comma as an explicit continuation request in order to allow the separator to be recognized.  See Figure 2.
+</p>
+
+<h4>Figure 2: Continuation after argument separator</h4>
+<pre>
+<code>
+    say value('X',,'OS2ENVIRONMENT') /* retrieves X with no side
+                                        effects */
+    say value('X',,                  ,
+              'OS2ENVIRONMENT')      /* same as above */
+    say value('X',,
+              'OS2ENVIRONMENT')      /* displays current value of X and
+                                       then sets X to OS2ENVIRONMENT */
+</code>
+</pre>
+
+<p>
+If you break an expression after a literal or variable that is not enclosed in parentheses, the statement will be treated as complete and the next line will be treated as a new statement.  In this situation you <strong>must</strong> supply a trailing comma as a continuation request.  See Figure 3.
+</p>
+
+<h4>Figure 3: Continuation after expression</h4>
+The ECHO command used in these examples is present in various PC operating systems and in the Unix subsystems of MVS and VM.
+<pre>
+<code>
+    'ECHO' 'DIR'                     /* Displays 'DIR' */
+    'ECHO'  ,                        /* Note continuation comma */
+    'DIR'                            /* Also displays 'DIR' */
+    'ECHO'                           /* Displays blank line */
+    'DIR'                            /* Displays directory */
+</code>
+</pre>
+
+
+<p>
+Note that although in some cases REXX will recognize a syntax error when you omit a required explicit continuation character, in other cases you will get incorrect results with no error message.
+</p>
+<a id="link_7"><h3>Keywords</h3></a>
+
+<p>
+Avoid the use of variables with the same name as a REXX keyword.  If you use such names you risk having statements misinterpreted or rejected as invalid.  See Figure 4.  This is similar to the problem of one character variable names being misinterpreted when abutted to literal strings.
+
+<h4>Figure 4: Misinterpreted keyword</h4>
+<pre>
+<code>
+    text = 'tom dick harry'
+    with = 'Ada Emmy Gracie Lise'
+    /* we want to parse 'tom dick harry Ada Emmy Gracie Lise'
+       with 'with first rest' */
+    parse value text with first rest      /* wrong ! */
+    parse value text with with first rest /* also wrong ! */
+</code>
+</pre>
+
+<br>
+<a id="link_8"><h3>Labels and SIGNAL</h3></a>
+
+<p>
+The SIGNAL statement in REXX looks very much like a GOTO in PL/I and other block-structured languages, but its semantics are
+very different. Do not attempt to use SIGNAL
+&lt;labelname&gt;
+as a substitute GOTO or you will cause yourself serious difficulties. Although the form SIGNAL
+&lt;labelname&gt;
+will cause a jump to the code with that label, it also flushes the control stack. A subsequent END statement will be detected as an error. See Figure 5. It is best to use SIGNAL strictly for its intended purpose of indicating exceptional conditions.
+</p>
+
+
+<h4>Figure 5: SIGNAL errors</h4>
+<pre>
+<code>
+    do forever
+       signal BELL
+       whatever
+       BELL:
+       end                           /* an error will be detected here
+                                        because the SIGNAL logically
+                                        terminated the DO */
+</code>
+</pre>
+
+<a id="link_9"><h3>Parsing</h3></a>
+
+<p>
+The parsing facilities of REXX have several features that may be confusing to the neophyte.
+</p>
+<p>
+REXX has keywords for abbreviated forms of PARSE, e.g., ARG is short for PARSE UPPER ARG.  Beginners often forget that these abbreviated forms will translate all data to upper case.
+</p>
+<p>
+When using PARSE or its abbreviations, it is important that you remember that the last variable or period (".") is treated differently from all of the others; in general its value will include leading <strong>and</strong> trailing blanks.  Use the STRIP function or a trailing period to remove these if they are unwanted.
+</p>
+
+As previously noted, it is best not to use variable names that are the same as REXX keywords.  In particular, do not use the names
+<pre>
+<code>
+    ARG             PULL            VAR
+    EXTERNAL        SOURCE          VERSION
+    NUMERIC         VALUE           WITH
+</code>
+</pre>
+
+<p>
+Even if you are careful to write code that does what you want, use of those names will confuse whoever has to modify your code, possibly including yourself.
+</p>
+<p>
+Also, be careful about your use of the keywords VALUE, VAR and WITH. The code in Figures 6 and 7 will produce quite unexpected results, and was probably meant to behave like the code in Figure 8.  In general, use VAR for simple parsing and don't use the following:
+</p>
+
+
+<h4>Figure 6:  Misuse of WITH</h4>
+<pre>
+<code>
+    stg = abc
+    parse var stg with x +1 y +1 z
+    /* sets with='ABC' x='' y='' z='' */
+</code>
+</pre>
+
+<h4>Figure 7:  Misuse of VALUE</h4>
+<pre>
+<code>
+    stg = abc
+    parse value stg x +1 y +1 z
+    /* Error 38! */
+</code>
+</pre>
+
+<h4>Figure 8:  Correct use of WITH and VALUE</h4>
+<pre>
+<code>
+    stg=abc
+    parse value stg with x +1 y +1 z
+    /* sets x='A' y='B' z='C' */
+    /* Equivalent to */
+    parse var stg x +1 y +1 z
+    /* which is better form in this case */
+</code>
+</pre>
+
+<a id="link_10"><h3>Scoping rules</h3></a>
+
+<p>
+Although superficially REXX appears to be a block-structured language, it is actually a hybrid between dynamic and static scoping.  It is possible, although bad form, to call a label inside a DO from code outside the DO. It is possible to perform code at an arbitrary label as both a call and as a function invocation.  It is incumbent upon the programmer to supply the discipline that the language omits.
+</p>
+<p>
+The scope of a procedure is determined strictly dynamically; there is no static terminator such as END.
+</p>
+<p>
+Do not write code intended to serve as both inline and out-of-line code; programs in which you both call and fall through into the same code are notoriously error prone. Precede each internal subprocedure with a statement that will prevent accidentally falling into it, e.g., EXIT; if your logic permits, begin the procedure with a PROCEDURE statement, which must be the first statement after the label. See Figure 9.
+</p>
+
+<h4>Figure 9: Procedure isolation</h4>
+<pre>
+<code>
+    saytime: PROCEDURE /* here I can get away with hiding all variables */
+       say time
+       return
+    /* Note that there is no END statement ! */
+
+    exit /* In case of fallthrough, since I can't use PROCEDURE */
+    putdata:
+       parse arg name .
+       say name'='value(name)
+       return
+    /* Note that there is no END statement ! */
+
+    badstyle: PROCEDURE                 /* This entry has no access */
+    badform:                            /* This entry has access    */
+    ...
+    return
+    /* Don't ever do this; it is an extremely dangerous style */
+</code>
+</pre>
+
+
+<p>
+The PROCEDURE statement hides all variables except those explicitly listed in an EXPOSE clause. If your subroutine accesses the caller's variables and constructs those variable names from its arguments, then you must not use the PROCEDURE statement. This is the only situation in which you should omit it. See Figure 9.
+</p>
+<p>
+It is possible to write procedures with overlapping scope in which one procedure hides variables with a PROCEDURE statement and the other procedure leaves all variables exposed by default.  See Figure 9.  This is a dangerous practice, and should be avoided.
+</p>
+<a id="link_11"><h3>Type and range checking</h3></a>
+
+<p>
+Unlike most other languages, REXX has neither variable typing nor arrays. Arrays are often simulated using compound variables.  This leads to several possible types of undetected errors.
+</p>
+<p>
+When you assign a value to a variable, there is no check that the value is consistent with the intended type.  If your logic requires any constraints on the values that can be assigned, it is your responsibility to code explicit checks using, e.g., the DATATYPE function.
+</p>
+<p>
+When you use a variable name as part of a compound variable in order to simulate an access to an array element, REXX does not check that the index is within the array extents, or even that it is an integer. If your logic requires enforcing such constraints, you must code them explicitly. Note that even an uninitialized variable can be used as an "index" for a compound variable.
+</p>
+<a id="link_12"><h3>Uninitialized variables used as constants</h3></a>
+
+<p>
+When you refer to an uninitialized variable, its value is by default its name in upper case.  This is frequently a convenient alternative to the use of literal strings.  However, if you inadvertently use that name for a true variable elsewhere in the program, you may get incorrect and apparently inexplicable results.  It is best to adopt conventions for your variable names that minimize the risk of such problems.
+</p>
+<p>
+Some recommend always using explicit literal strings for constants. Although well meant, this advice can lead to programs that are harder to read.  I recommend that you do use uninitialized variables, but judiciously. If you choose to not exploit the default behavior for uninitialized variables, place a SIGNAL ON NOVALUE at the beginning of your program to detect violations of that decision.
+
+</p>
+<a id="link_13"><h3>Variable References</h3></a>
+
+<p>
+REXX does not currently allow passing parameters to procedures by name or by reference.  However, you can often get similar results by passing constants and using them to construct names.  This is an extremely common and powerful technique, especially in conjunction with compound variables. However, there are a few pitfalls.
+</p>
+<p>
+If you call a procedure that has an EXPOSE clause on the PROCEDURE statement, it will only have access to the variables that you exposed. If you pass an argument containing the name of some other variable, the code will only be able to access a local version of that variable.
+</p>
+<p>
+If you call a procedure that requires a variable name as a parameter, and use an uninitialized variable to represent its own name for that parameter, you will probably get incorrect results on your second time through.
+</p>
+---------------------------------------<br>
+
+<h2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Part II of: <br>
+Safe REXX on the Desktop,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Or<br>
+Will They Still Respect My Code in the Morning?
+</h2>
+<p>by Shmuel (Seymour J.) Metz &nbsp;© 1998, 2023</p>
+
+<a id="link_14"><h2>COMPATIBILITY AND ENVIRONMENTAL ASPECTS</h2></a>
+
+<p>
+REXX has some specific features that you can exploit to make your programs more compatible across platforms, or between environments on the same platforms.  REXX also has some features that hinder compatibility.
+</p>
+<a id="link_15"><h3>ADDRESS and the default environment</h3></a>
+
+<p>
+If you write a command file that issues host commands, ie. OS/2, CMS, TSO, DOS commands, do not assume that the default environment is that of the host itself.  By including, e.g., ADDRESS CMD, in your code, you will enable the routine for use from within other environments, e.g., editors that use REXX as their macro language.
+</p>
+<a id="link_16"><h3>Environmental factors</h3></a>
+
+<p>
+REXX does not shield you from the underlying environment; in writing a REXX program you must understand the behavior of your operating system and user interface if you want to avoid nasty surprises.  As an example, if you invoke a REXX program in an OS/2 CMD file and scan the argument looking for the string "/Q", you will not find it because CMD.EXE will have taken the string "/Q" to be a "quiet" option and removed it.
+</p>
+<p>
+If you must use binary or hexadecimal constants for character data, be aware that character encoding varies among systems.  DOS and OS/2 use ASCII, CMS and TSO use EBCDIC.  Even then, the correct value may depend upon the code page or national language in use.  Be aware of the character sets used in each of your target systems, and program accordingly.  Segregate system-dependent values and code page-dependent values to make your code easier to maintain.
+</p>
+<a id="link_17"><h3>I/O model</h3></a>
+
+<p>
+The I/O model in REXX is based on the file system in the CMS component of IBM's VM/SP.  Most other systems, e.g., DOS, Linux, OS/2, do not have an orientation towards line numbers. For this reason, the CHARS and LINES functions on those systems only return values of 0 and 1.  See Figure 10.  Code that expects an exact number of characters or lines from those functions may fail in those systems.
+</p>
+<p>
+Further, an implementation that returned exact numbers on, e.g., Linux, could be horribly inefficient.
+</p>
+
+<h4>Figure 10: LINES examples</h4>
+
+<pre>
+<code>
+   /* In standard REXX */
+   do lines(myfile)
+      myline=linein(myfile)
+      ...
+      end
+   /* In OS/2 this would only read one line ! */
+
+   /* In OS/2 SAA REXX */
+   do while lines(myfile) /= 0
+      myline=linein(myfile)
+      ...
+      end
+</code>
+</pre>
+
+
+<p>
+REXX provides no good way to detect end-of-file.  You could use STREAM(file,"State") and check for a value of "NOTREADY", but there is no guarantee that end-of-file is the only condition causing NOTREADY.
+</p>
+<p>
+The safest thing is to encapsulate your input/output code and then take advantage of whatever facilities may exist in each target system, e.g., EXECIO with the STEM option, REXXLIB from Quercus.  Any such code should be thoroughly documented.  Be aware that EXECIO in TSO/E supports only the stem and stack forms of EXECIO; it does not support the variable name form.
+</p>
+<a id="link_18"><h2>PARSE SOURCE and VERSION</h2></a>
+
+<p>
+The PARSE SOURCE statement allows your code to determine the operating system and file from which it was invoked, as well as the type of invocation.  You can take advantage of this in order to maintain a single version of a REXX program for two different systems, to detect inappropriate invocations, to select character encoding, etc.  If you have data files that, by default, should be in the same directory as your code, you can use this statement to locate them.  See Figure 11.
+</p>
+
+<h4>Figure 11: Parse examples</h4>
+
+<pre>
+<code>
+   parse source system invocation origin
+
+   select
+      when system = 'OS/2' then do
+        ...
+        end
+      when system = 'TSO' then do
+        ...
+        end
+      otherwise do
+         say system 'is not supported by' origin
+         exit
+         end
+      end
+
+   parse version name level date1 date2 date3 .
+   select
+      when name = 'REXXSAA' then do
+         parse var level int '.' frac
+         if int > 3 then do
+            /* fast code for SAA level 4 goes here */
+            end
+         else do
+            /* slower code for older SAA level goes here */
+            end
+         end
+      when name = 'REXX370' then do
+         /* Code for CMS or TSO level of REXX  goes here */
+         end
+      otherwise do
+         say name 'is an unsupported REXX implementation'
+         exit
+         end
+      end
+</code>
+</pre>
+
+
+<p>
+The PARSE VERSION statement allows you to determine the language level of REXX that your program has available.  This allows you to write code that exploits new features of REXX, yet include alternate code that will be used when running on an older platform.  See Figure 11.
+</p>
+<a id="link_19"><h3>Variable patterns</h3></a>
+
+<p>
+If you use variable patterns in the templates of your PARSE statements, be aware that some extremely old implementations of REXX do not support all forms. If you need to run on multiple platforms, check which forms are supported on each and program accordingly.
+</p>
+<a id="link_20"><h2>RECAPITULATION</h2></a>
+
+<p>
+You can make your use of REXX more enjoyable and productive by following a few basic rules.  Learn REXX on its own terms.  Be careful and consistent in your use of abutment and continuation.  Do not use keywords or single letters as variable names.  Use SIGNAL only for error handling.  Do not attempt to use the same lines as both inline code and out of line code.  Place a PROCEDURE at the beginning of every subroutine, and carefully analyze which variables to expose, especially if you will be passing the names of variables.  Be careful in your use of uninitialized variables.  Adopt a clear and consistent programming style.  Understand the vagaries of REXX parsing.  Try to make your code portable across platforms and usable in multiple environments.
+</p>
+<p>
+These rules will not, of course, eliminate all errors, but they will certainly eliminate many errors that would otherwise be highly likely.  Good luck, and practice Safe REXX!
+</p>
+<p>
+Note:  The portability considerations are based on experience with REXX in CMS (VM/SP), DOS (Personal REXX), MVS (TSO/E) and OS/2 (SAA REXX).  I have not used other implementations such as AREXX, Object REXX and Regina.  I welcome comments on portability issues going to or from these other implementations.
+</p>
+<a id="link_21"><h2>REFERENCES</h2></a>
+
+
+<ul>
+<li>    OS/2 Procedures Language 2/REXX Reference, S10G-6268</li>
+
+<li>    OS/2 Procedures Language 2/REXX User's Guide, S10G-6269</li>
+
+<li>    SAA Common Programming Interface Procedures Language Reference, SC26-4358</li>
+
+<li>    TSO Extensions Version 2 REXX Reference, SC28-1883</li>
+
+<li>    TSO Extensions Version 2 REXX User's Guide, SC28-1882</li>
+
+<li>    The REXX Language: A Practical Approach to Programming, 2nd Edition. By Michael F. Cowlishaw (Prentice-Hall, Inc.
+      A division of Simon & Schuster), Englewood Cliffs, New Jersey  07632, ISBN 0-13-780651-5</li>
+</ul>
+
+<a id="link_22"><h2>Notes and Trademarks</h2></a>
+
+<p>
+IBM, MVS/ESA, OS/390, z/OS, OS/2, VM/SP, VM/ESA and z/VM are trademarks of IBM Corporation. Unix is a trademark of The Open Group. Slightly different versions of this article have appeared in print in the 1990s, this version is as of 2023.
+</p>
+<a id="link_23"><h3>BIOGRAPHY</h3></a>
+
+<p>
+Shmuel (Seymour J.) Metz, Radus Software.  Mr. Metz is a Senior MVS Systems Programmer supporting a Federal Government contract.  He has worked with computers for over half a century.  He has been involved in the development of two different operating systems.  He has experience on a wide variety of languages and platforms, and has used REXX on four of them.  Mr. Metz has an MA in Mathematics from the State University of New York at Buffalo.
+</p>
+<p>
+Copyright 1998, 2023 by Shmuel (Seymour J.)  Metz.  All rights reserved.  Permission for reproduction in whole or in part is hereby granted to educational, non-profit and computer user groups for internal, non-profit use, provided credit is given and this notice is included.  All other reproduction without the author's prior written permission is prohibited.
+</p>
+
+          </main>
+          <footer>
+            <!-- ============================ Footer =========================================== -->
+          </footer>
+
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
