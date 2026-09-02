@@ -40,7 +40,7 @@ permission is prohibited.
    - [Parsing](#parsing)
    - [Scoping rules](#scoping-rules)
    - [Type and range checking](#type-and-range-checking)
-   - [Uninitialized variables used as constants](#uninitialized-variables)
+   - [Dropped symbols used as constants](#dropped-symbols)
    - [Variable references](#variable-references)
 6. [Compatibility and environmental considerations](#compatibility)
    - [ADDRESS and the default environment](#address)
@@ -103,6 +103,12 @@ shell, not in an ordinary TSO/E address space, which uses `EXECIO`
 instead — see [I/O model](#io-model) below for the full detail and a
 worked example of both forms.
 
+This document does not discuss NetRexx. NetRexx compiles a
+Rexx-derived syntax to Java bytecode (or Java source) rather than
+running under a classic-Rexx or ooRexx interpreter, and its typed
+variables and Java interop give it a different pitfall profile than
+the dialects covered here.
+
 REXX has a number of features that can trap the unwary. This does not
 mean that REXX is a bad language, just that you need to understand it
 for what it is, as you must for any other programming language. Some
@@ -119,9 +125,9 @@ object-oriented languages, but its scoping and activation rules have
 their own logic, covered below.
 
 Other areas that may confuse the neophyte are the use of abutment for
-concatenation, the use of uninitialized variables as constants, the
-rules for continuation, parsing, the block structure, and the way
-variable references are passed. Later sections go into detail on each.
+concatenation, the use of dropped symbols as constants, the rules
+for continuation, parsing, the block structure, and the way variable
+references are passed. Later sections go into detail on each.
 
 You may write REXX code that must run on multiple platforms, or in
 different environments on the same platform. REXX has some language
@@ -332,7 +338,7 @@ invocations, `SIGL` the line number of the most recent `SIGNAL` or
 the kind of silent confusion this section is about. See
 [Variable references](#variable-references) below for the `RC`-vs-`RESULT`
 distinction in more detail, and the ooRexx-specific `RESULT` trap
-under [Uninitialized variables](#uninitialized-variables).
+under [Dropped symbols](#dropped-symbols).
 
 #### Figure 4: Misinterpreted keyword
 
@@ -594,8 +600,8 @@ When you use a variable name as part of a compound variable in order
 to simulate an access to an array element, REXX does not check that
 the index is within the array extents, or even that it is an integer.
 If your logic requires enforcing such constraints, you must code them
-explicitly. Note that even an uninitialized variable can be used as
-an "index" for a compound variable.
+explicitly. Note that even a dropped symbol can be used as an "index"
+for a compound variable.
 
 **ooRexx note**: ooRexx provides real collection classes — `.Array`,
 `.Directory`, `.Table`, `.Set`, `.Bag`, `.Queue`, `.OrderedCollection`,
@@ -681,48 +687,60 @@ same-named classic compound variable, even when the base name matches:
 ```rexx
 realStem = .stem~new
 realStem[3] = 'bar'
-say mystem.3            /* still uninitialized "MYSTEM.3" -- unrelated
+say mystem.3            /* still dropped -- "MYSTEM.3" -- unrelated
                             to realStem[3] even if named the same */
 ```
 
-### <a id="uninitialized-variables"></a>Uninitialized variables used as constants
+### <a id="dropped-symbols"></a>Dropped symbols used as constants
 
-When you refer to an uninitialized variable, its value is by default
-its name in upper case. This is frequently a convenient alternative
-to the use of literal strings. However, if you inadvertently use that
-name for a true variable elsewhere in the program, you may get
-incorrect and apparently inexplicable results. It is best to adopt
-conventions for your variable names that minimize the risk of such
-problems.
+ANSI X3.274-1996 distinguishes a *symbol* (§3.1.47: "a sequence of
+characters used as a name... [symbols] are used to name variables,
+functions, etc.") from the *variable* it may or may not currently
+name. A symbol that has never had a value assigned to it — what's
+often called "uninitialized" informally — has no variable behind it
+yet at all; the standard's own term for this state is *dropped*
+(§3.1.16: "a symbol which is in an uninitialized state, as opposed to
+having had a value assigned to it, is described as dropped"). When you
+refer to a dropped symbol, its value is by default its own name in
+upper case. This is frequently a convenient alternative to the use of
+literal strings. However, if you inadvertently assign a value to that
+same name elsewhere in the program — turning it into a real variable —
+you may get incorrect and apparently inexplicable results from code
+that still expected it dropped. It is best to adopt naming conventions
+that minimize the risk of such problems.
 
 Some recommend always using explicit literal strings for constants.
 Although well meant, this advice can lead to programs that are harder
-to read. Use uninitialized variables, but judiciously. If you choose
-to not exploit the default behavior for uninitialized variables,
-place a `SIGNAL ON NOVALUE` at the beginning of your program to
-detect violations of that decision.
+to read. Use dropped symbols as constants, but judiciously. If you
+choose to not exploit this default behavior, place a `SIGNAL ON
+NOVALUE` at the beginning of your program to detect any reference to a
+symbol that's still dropped when your logic expected a real variable.
 
 **ooRexx note — never name your own variable `result`.** This is the
-same "uninitialized variable reverts to its own name" behavior above,
-but with a genuinely surprising trigger in ooRexx: `result` isn't only
-set by `CALL`. *Any* bare message-send statement — a whole clause, its
+same "a dropped symbol reverts to its own name" behavior above, but
+with a genuinely surprising trigger in ooRexx: `result` isn't only set
+by `CALL`. *Any* bare message-send statement — a whole clause, its
 return value not assigned to anything — is handled the same way as a
 `CALL` to a routine with no `RETURN` value: if the invoked method
 returns nothing at all (not even `.nil` — several Collection methods,
 e.g. `~put`, are defined to return no result object), `result` is
-*dropped* back to uninitialized. This breaks the moment any bare
-message-send whose method returns nothing executes — including the
-ordinary case of building up your *own* local variable named `result`
-via repeated bare sends to it:
+dropped again — the variable you just assigned reverts to being a bare
+symbol. This breaks the moment any bare message-send whose method
+returns nothing executes — including the ordinary case of building up
+your *own* local variable named `result` via repeated bare sends to
+it:
 
 ```rexx
-result = .Directory~new        -- fine: plain assignment
+result = .Directory~new        -- fine: plain assignment, RESULT is now
+                                   a real variable
 result~put('', 'INTERPRETER')  -- runs; but ~put returns no result
-                                   object, so RESULT reverts to
-                                   uninitialized right after this line
+                                   object, so RESULT is dropped again
+                                   right after this line
 result~put('', 'DIALECT')      -- Error 97.1: Object "RESULT" does not
                                    understand message "PUT" -- the
-                                   PREVIOUS line already reverted it
+                                   PREVIOUS line already dropped it,
+                                   so RESULT is just the string "RESULT"
+                                   again by the time this line runs
 ```
 
 `putReturn = d~put('v','k')` raises "Message did not return a
@@ -748,9 +766,8 @@ other variable, the code will only be able to access a local version
 of that variable.
 
 If you call a procedure that requires a variable name as a parameter,
-and use an uninitialized variable to represent its own name for that
-parameter, you will probably get incorrect results on your second
-time through.
+and use a dropped symbol to represent its own name for that parameter,
+you will probably get incorrect results on your second time through.
 
 **ooRexx note**: ooRexx closes the by-reference gap classic Rexx
 disclaims above, with a real `USE ARG` statement:
@@ -1221,10 +1238,10 @@ should be able to resume. Do not attempt to use the same lines as
 both inline code and out-of-line code. Place a `PROCEDURE` at the
 beginning of every subroutine, and carefully analyze which variables
 to expose, especially if you will be passing the names of variables —
-and remember that `EXPOSE` means something different again inside an
+and remember that `EXPOSE` means something different again inside a
 `::METHOD`, and is not legal at all inside a `::ROUTINE`. Be careful
-in your use of uninitialized variables, and never name one of your
-own `result`. Adopt a clear and consistent programming style. Prefer
+in your use of dropped symbols, and never name one of your own
+`result`. Adopt a clear and consistent programming style. Prefer
 ooRexx's real collection classes to stem-simulated arrays when the
 data doesn't need positional-only indexing. Understand the vagaries
 of REXX parsing. Try to make your code portable across platforms and
