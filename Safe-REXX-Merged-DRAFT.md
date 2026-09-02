@@ -824,6 +824,28 @@ for use from within other environments too, e.g., the ISPF/PDF editor
 on a mainframe, or an editor that uses REXX as its macro language on
 a PC.
 
+The default environment, and what else is available, varies by
+platform and dialect — an environment beyond the default is either a
+small fixed set the interpreter itself provides, or something a host
+application registers at run time (an editor's macro environment,
+for instance), and the two kinds are easy to conflate:
+
+| Platform / dialect | Default environment | Other environments |
+|---|---|---|
+| OS/2 classic REXX and OREXX | `CMD` | Whatever the host application registers (e.g. `EDIT` for an editor) — `CMD` is the only OS/2-native built-in. Verified directly against IBM's own Procedures Language 2/REXX Reference and Object REXX Reference. |
+| ooRexx | `CMD` (Windows) | `SYSTEM`, `PATH` — verified live, ooRexx 5.2.0 on Windows; not checked on Linux, where the default may differ. |
+| Regina | `SYSTEM` (aka `ENVIRONMENT`/`OS2ENVIRONMENT`) | `COMMAND` (aka `CMD`/`PATH`), `REXX` (aka `REGINA`, runs the command in a fresh interpreter instance). Per Regina's own reference manual. |
+| TSO/E REXX | `TSO` | `ISPEXEC` (ISPF services, available only when running under ISPF), `ISREDIT` (ISPF/PDF edit macros, available only in an edit session). |
+| CMS REXX (VM/SP) | `CMS`/`COMMAND` | `CP` (hypervisor commands). |
+| System REXX (z/OS) | `MVS` (when configured `TSO=NO`) | `ATTACH`, `ATTCHMVS`, `ATTCHPGM`, `LINK`, `LINKMVS`, `APPCMVS`, `BCPii`, `CPICOMM`, `LU62`; a `TSO=YES` exec additionally gets `TSO` and the ISPF-style environments above. |
+
+The first two rows and Regina's row are grounded directly in each
+implementation's own reference manual (checked this edition); the
+TSO/E, CMS, and System REXX rows are standard, well-documented IBM
+behavior but were not checked against a primary manual for this
+edition — verify against your own system's REXX Reference before
+relying on the exact environment names.
+
 Standard Rexx (not an ooRexx-only extension) can capture a child
 process's stdout and stderr directly into stems, with no temp files or
 pipes needed:
@@ -1066,7 +1088,28 @@ If your `SELECT` on `PARSE VERSION`'s `name` field needs to
 distinguish ooRexx from classic implementations, match on a `name`
 that begins with `REXX-ooRexx`, e.g., `when name~abbrev('REXX-ooRexx')
 then do ... end` — do not assume `name` will be one of the two classic
-values above.
+values above. The two classic values themselves are also not the
+whole story — the full set of `name`/`level` values you may actually
+meet:
+
+| Implementation | `name` | `level` | Source |
+|---|---|---|---|
+| OS/2 classic REXX (Procedures Language 2/REXX) | `REXXSAA` | `4.00` | IBM's own reference manual, verified directly |
+| OREXX (Object REXX for OS/2) | `OBJREXX` | `6.00` | IBM's own reference manual, verified directly |
+| CMS / TSO/E REXX (classic mainframe, "REXX370") | `REXX370` | `4.00` | Widely documented; not checked against a primary manual for this edition |
+| Regina | `REXX-Regina_<version>` (e.g. `REXX-Regina_3.9.6(MT)`) | `5.00` | Regina's own reference manual (name format) and public examples (exact string); ANSI-compliant since Regina 3.1 |
+| ooRexx | `REXX-ooRexx_<version>(MT)_<bits>-bit` (e.g. `REXX-ooRexx_5.2.0(MT)_64-bit`) | `6.06` | Verified live, ooRexx 5.2.0 |
+
+Two things worth noticing in this table. First, `level` is *not* the
+interpreter's own version number — it is the Rexx *language level* the
+interpreter targets (`4.00` is TRL-2, `5.00` is ANSI X3.274-1996), and
+several implementations have historically conflated the two; look for
+the interpreter's own version inside the `name` word instead (as
+ooRexx and Regina both do) or in `PARSE SOURCE`. Second, `REXXSAA` and
+`REXX370` share the exact same `level`, `4.00` — despite one being a
+PC/workstation implementation and the other a mainframe one — because
+neither was ever brought up to the ANSI-1996 level; see
+[Platforms and standards conformance](#platforms-and-standards) above.
 
 ### <a id="function-library-availability"></a>Availability of optional function libraries
 
