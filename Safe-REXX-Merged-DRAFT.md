@@ -166,8 +166,8 @@ permission is prohibited.
 1. [Introduction](#introduction)
 2. [What is REXX?](#what-is-rexx)
 3. [Platforms and standards conformance](#platforms-and-standards)
-5. [Summary of pitfalls](#summary-of-pitfalls)
-6. [Specific examples and recommended avoidance tactics](#specific-examples)
+4. [Summary of pitfalls](#summary-of-pitfalls)
+5. [Specific examples and recommended avoidance tactics](#specific-examples)
    - [Abutment](#abutment)
    - [Continuation](#continuation)
    - [Keywords](#keywords)
@@ -177,14 +177,15 @@ permission is prohibited.
    - [Type and range checking](#type-and-range-checking)
    - [Uninitialized variables used as constants](#uninitialized-variables)
    - [Variable references](#variable-references)
-7. [Compatibility and environmental considerations](#compatibility)
+6. [Compatibility and environmental considerations](#compatibility)
    - [ADDRESS and the default environment](#address)
    - [Environmental factors](#environmental-factors)
    - [I/O model](#io-model)
    - [PARSE SOURCE and VERSION](#parse-source-and-version)
    - [Availability of optional function libraries](#function-library-availability)
    - [Variable patterns](#variable-patterns)
-8. [ooRexx-specific pitfalls](#oorexx-specific-pitfalls)
+7. [ooRexx-specific pitfalls](#oorexx-specific-pitfalls)
+8. [Debugging: reach for TRACE before guessing from black-box behavior](#debugging)
 9. [Recapitulation](#recapitulation)
 10. [References](#references)
 11. [Notes and trademarks](#notes-and-trademarks)
@@ -582,16 +583,30 @@ differently from all of the others; in general its value will include
 leading **and** trailing blanks. Use the `STRIP` function or a
 trailing period to remove these if they are unwanted.
 
-**ooRexx note**: in a parse template, a variable **not** enclosed in
-parentheses is a *receiver* — it is assigned the next parsed token,
-and does **not** match against the variable's current value. A
-variable enclosed in parentheses, `(foo)`, is a *match pattern* —
-Rexx uses `foo`'s current value as a literal string to scan for.
-Confusing the two is a silent logic error, not a syntax error:
+In a parse template, a variable **not** enclosed in parentheses is a
+*receiver* — it is assigned the next parsed token, and does **not**
+match against the variable's current value. A variable enclosed in
+parentheses, `(foo)`, is a *match pattern* — Rexx uses `foo`'s current
+value as a literal string to scan for. Confusing the two is a silent
+logic error, not a syntax error:
 
 ```rexx
 parse var line word rest     /* word RECEIVES the first token */
 parse var line (delim) rest  /* Rexx SCANS for delim's current value */
+```
+
+When the parse source is already a plain variable, prefer `PARSE VAR`
+over `PARSE VALUE ... WITH`. The two are not semantically different
+here — the reason is that every extra `WITH`/`VALUE` token in the
+source is one more chance to trip over exactly the keyword-confusion
+pitfalls covered above (Figures 5-7), or to introduce a stray
+keyword-shaped identifier while editing later. Reserve `PARSE VALUE
+... WITH` for genuine expression sources, where the `VALUE` keyword is
+actually doing something:
+
+```rexx
+parse var foo template          /* foo is a plain variable */
+parse value foo || bar with template   /* a genuine expression source */
 ```
 
 <a id="scoping-rules"></a>
@@ -606,6 +621,14 @@ upon the programmer to supply the discipline that the language omits.
 
 The scope of a procedure is determined strictly dynamically; there is
 no static terminator such as `END`.
+
+**ooRexx note**: a `::METHOD`, `::ROUTINE`, or `::CLASS` body *is*
+closed by a static boundary — the next `::` directive, or end of file.
+This doesn't contradict the classic-Rexx rule above (there is still no
+explicit terminator statement like `END` inside the body itself), but
+it does mean a directive body's extent is fixed by the file's
+directive structure, not purely by dynamic control flow the way an
+internal-subroutine's scope is.
 
 Do not write code intended to serve as both inline and out-of-line
 code; programs in which you both call and fall through into the same
@@ -701,13 +724,14 @@ end
 Prefer `do item over collection` to `do i = 1 to stem.0` when the
 data doesn't need positional indexing at all.
 
-**ooRexx note — indirect/computed stem access has three forms, and
-only one is correct per context; the wrong ones don't always error.**
-This is a real trap precisely because two of the three wrong
-combinations look plausible:
+**Indirect/computed stem access has more than one form, and getting
+the wrong one doesn't always error.** This is a real trap in classic
+Rexx as much as ooRexx, precisely because the wrong forms often look
+plausible:
 
 ```rexx
-/* 1. Classic compound-variable indirect tail access: dot, then bracket */
+/* Indirect tail access: dot, then bracket -- standard Rexx, not an
+   ooRexx extension */
 mystem.1 = 'one'; mystem.2 = 'two'; mystem.3 = 'three'
 i = 3
 say mystem.[i]         /* CORRECT: 'three' */
@@ -720,18 +744,11 @@ say mystem[i]          /* WRONG, but raises NO error -- an unset
                            returns "S" (character 3 of "MYSTEM"), not
                            the stem element at all */
 
-/* 2. A real Stem/collection object: plain bracket notation is correct
-   here -- but it is a SEPARATE namespace from same-named classic
-   compound variables, even when the base name matches */
-realStem = .stem~new
-realStem[3] = 'bar'
-say mystem.3            /* still uninitialized "MYSTEM.3" -- unrelated
-                            to realStem[3] even if named the same */
-
-/* 3. Using another compound variable directly as a tail component
-   looks like it should nest, but the tail is split on periods into
+/* Using another compound variable directly as a tail component looks
+   like it should nest, but the tail is split on periods into
    independent pieces BEFORE any substitution happens -- a piece is
-   never itself re-parsed as a compound-variable reference */
+   never itself re-parsed as a compound-variable reference. Also
+   standard Rexx behavior, not ooRexx-specific. */
 orphans.0 = 0
 orphans.0 = orphans.0 + 1
 orphans.orphans.0 = 'first'      /* WRONG: not "orphans.1" -- every
@@ -739,11 +756,24 @@ orphans.orphans.0 = 'first'      /* WRONG: not "orphans.1" -- every
                                      derived tail ORPHANS.ORPHANS.0 */
 ```
 
-The safe pattern in every case: copy the index into a plain simple
+The safe pattern in both cases: copy the index into a plain simple
 variable first, then use that variable as the tail (`n = orphans.0;
-orphans.n = value`) — or, better, use a real collection object and
-plain bracket notation throughout rather than simulating one with
-compound variables.
+orphans.n = value`).
+
+**ooRexx note**: a real `.stem` collection *object* is a further,
+genuinely ooRexx-only alternative — plain bracket notation on it is
+correct and idiomatic, but it is a **separate namespace** from a
+same-named classic compound variable, even when the base name matches:
+
+```rexx
+realStem = .stem~new
+realStem[3] = 'bar'
+say mystem.3            /* still uninitialized "MYSTEM.3" -- unrelated
+                            to realStem[3] even if named the same */
+```
+
+Better still: use a real collection object and plain bracket notation
+throughout, rather than simulating one with compound variables.
 
 <a id="uninitialized-variables"></a>
 ### Uninitialized variables used as constants
@@ -829,10 +859,11 @@ turn a plain string or number into a by-reference parameter the way
 some other languages' reference parameters do, since Rexx strings and
 numbers are themselves immutable values.
 
-**ooRexx note**: `rc` and `result` are set by different things, and
-conflating them is a real, easy-to-make bug. `rc` is set **only** by
-host commands — a bare host-command clause, `ADDRESS foo 'expr'`, or
-similar. It is **not** set by `CALL` or a function/method invocation.
+`rc` and `result` are set by different things, and conflating them is
+a real, easy-to-make bug — in classic Rexx as much as ooRexx. `rc` is
+set **only** by host commands — a bare host-command clause, `ADDRESS
+foo 'expr'`, or similar. It is **not** set by `CALL` or a
+function/method invocation.
 `result` is set by `CALL` and by any unassigned function invocation
 (see the caution about naming your own variable `result`, above).
 Reading `rc` after `CALL SysFileCopy` reads the *previous* host
@@ -868,9 +899,9 @@ for use from within other environments too, e.g., the ISPF/PDF editor
 on a mainframe, or an editor that uses REXX as its macro language on
 a PC.
 
-**ooRexx note**: ooRexx (and standard Rexx generally, not an
-ooRexx-only extension) can capture a child process's stdout and
-stderr directly into stems, with no temp files or pipes needed:
+Standard Rexx (not an ooRexx-only extension) can capture a child
+process's stdout and stderr directly into stems, with no temp files or
+pipes needed:
 
 ```rexx
 address system 'some-command' with output stem out. error stem err.
@@ -921,8 +952,8 @@ character sets used in each of your target systems, and program
 accordingly. Segregate system-dependent values and code-page-dependent
 values to make your code easier to maintain.
 
-**ooRexx note**: ooRexx variable names and labels are case-insensitive
-regardless of platform, but two related things are not, and the
+Rexx variable names and labels are case-insensitive on every
+platform, in every dialect — but two related things are not, and the
 platform matters:
 
 - Filenames on Windows (NTFS) or ArcaOS/OS2 (JFS) may be
@@ -989,10 +1020,11 @@ documented. Be aware that `EXECIO` in TSO/E supports only the stem
 and stack forms, not the variable-name form; even in CMS, it is
 usually best to use the stem form of `EXECIO`.
 
-**ooRexx note — `LINEOUT` opens in append mode by default; a
-full-file overwrite needs an explicit replace first.** This is a real
-bug pattern, not a hypothetical: a script that deletes a file and then
-writes it fresh with repeated `LINEOUT` calls will silently duplicate
+**`LINEOUT` opens in append mode by default; a full-file overwrite
+needs an explicit replace first.** This is standard Rexx behavior, not
+an ooRexx quirk, and a real bug pattern, not a hypothetical: a script
+that deletes a file and then writes it fresh with repeated `LINEOUT`
+calls will silently duplicate
 content the moment the delete step ever fails (a locked file, a
 permission issue), because `LINEOUT` doesn't know the delete was
 supposed to have happened:
@@ -1135,10 +1167,11 @@ a third-party library like REXXLIB — may genuinely not be loaded in
 every environment your code might run in, and checking before you
 depend on it is cheap insurance.
 
-**ooRexx note**: the equivalent check before using a RexxUtil function
-is `RxFuncQuery`, and the standard way to load the package at all
-(needed at least once per process, since it's not autoloaded the way
-some built-ins are) is:
+The modern equivalent check before using a RexxUtil function —
+standard across classic Rexx and ooRexx alike, not an ooRexx-only
+mechanism — is `RxFuncQuery`, and the standard way to load the package
+at all (needed at least once per process, since it's not autoloaded
+the way some built-ins are) is:
 
 ```rexx
 call RxFuncAdd 'SysLoadFuncs', 'RexxUtil', 'SysLoadFuncs'
@@ -1167,9 +1200,9 @@ forms are supported on each and program accordingly.
 ## ooRexx-specific pitfalls
 
 The pitfalls in this section have no counterpart in classic Rexx —
-they arise only from ooRexx's package/class model, and are worth a
-dedicated section rather than a callout under an existing classic-Rexx
-topic.
+they arise only from ooRexx's package/class/object model, and are
+worth a dedicated section rather than a callout under an existing
+classic-Rexx topic.
 
 ### `::CLASS` needs `PUBLIC` to be visible from another package
 
@@ -1257,21 +1290,25 @@ result = str~substr(1, 5)~translate
 result = str~translate~space~strip
 ```
 
-### Debugging: reach for TRACE before guessing from black-box behavior
+---
 
-When an ooRexx program's observed behavior doesn't match what the
-source should do — especially anything involving `ADDRESS`,
-string-building, or implicit operators — add `TRACE I` (or `TRACE
-ALL` for more detail) near the top of the script and run it again,
-rather than iterating on black-box hypotheses (rewording the command,
-adding or removing quotes, trying alternate constructs) and inferring
-the cause from outcomes alone. `TRACE I` prints every clause as it
-executes, the intermediate result of each sub-expression, and,
-critically, the exact string handed to `ADDRESS` or any other target
-— which settles what string your code actually built as a fact
-instead of a guess. If a second attempt at explaining unexpected
-behavior from outputs alone would just be another guess, that's the
-signal to add `TRACE I` instead of guessing a third time.
+<a id="debugging"></a>
+## Debugging: reach for TRACE before guessing from black-box behavior
+
+`TRACE` is standard Rexx, not an ooRexx feature, and the advice below
+applies to any Rexx dialect. When a program's observed behavior
+doesn't match what the source should do — especially anything
+involving `ADDRESS`, string-building, or implicit operators — add
+`TRACE I` (or `TRACE ALL` for more detail) near the top of the script
+and run it again, rather than iterating on black-box hypotheses
+(rewording the command, adding or removing quotes, trying alternate
+constructs) and inferring the cause from outcomes alone. `TRACE I`
+prints every clause as it executes, the intermediate result of each
+sub-expression, and, critically, the exact string handed to `ADDRESS`
+or any other target — which settles what string your code actually
+built as a fact instead of a guess. If a second attempt at explaining
+unexpected behavior from outputs alone would just be another guess,
+that's the signal to add `TRACE I` instead of guessing a third time.
 
 ---
 
