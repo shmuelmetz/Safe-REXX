@@ -565,7 +565,7 @@ dangerous practice, and should be avoided.
 depending on where it appears, and they are easy to conflate.
 `PROCEDURE EXPOSE` (used inside a classic internal subroutine, as
 above) exposes the *caller's* local variables. `EXPOSE` used as the
-first statement of an `::METHOD` body exposes that object's *instance*
+first statement of a `::METHOD` body exposes that object's *instance*
 variables — a completely different variable pool, private to the
 object, not the caller's locals. And **`EXPOSE` is not legal at all
 inside a `::ROUTINE`** — a routine has no access to any caller's
