@@ -630,6 +630,19 @@ it does mean a directive body's extent is fixed by the file's
 directive structure, not purely by dynamic control flow the way an
 internal-subroutine's scope is.
 
+A directive also closes an internal classic-Rexx label reached via
+`CALL`, when execution reaches it — but not with `RETURN` semantics.
+Verified directly, since this is easy to get wrong by analogy: calling
+an internal label whose code has no explicit `RETURN` and simply runs
+into a `::` directive boundary terminates the **entire program**
+cleanly (no error condition raised, nothing returned to the caller) —
+the same as an implicit `EXIT`, not a `RETURN`. This is genuinely
+different from falling off the end of a called label into *ordinary*
+code with no directive present, which is plain sequential fall-through
+into whatever comes next, executing it as if it were part of the same
+routine. A directive boundary specifically ends the program; a
+directiveless fall-through does not.
+
 Do not write code intended to serve as both inline and out-of-line
 code; programs in which you both call and fall through into the same
 code are notoriously error prone. Precede each internal subprocedure
