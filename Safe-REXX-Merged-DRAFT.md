@@ -850,9 +850,15 @@ Regina's own reference manual: its `ADDRESS WITH` syntax diagram lists
 only `STREAM`, `STEM`, `LIFO`, and `FIFO` as resource types — `LIFO`
 and `FIFO` are Regina's own extensions beyond the ANSI baseline, but
 `USING` does not appear anywhere in the manual, so Regina does not
-have it. OREXX/OBJREXX not checked directly. To supply empty stdin
-(preventing a child process from blocking waiting for input), define
-an empty stem and pass it as `INPUT STEM`:
+have it. Checked against IBM's own OS/2 reference documentation for
+both classic Rexx and OREXX (Procedures Language 2/REXX Reference and
+Object REXX Reference): the `ADDRESS` instruction's own syntax diagram
+in *both* is just `ADDRESS [environment] [expression]` — no `WITH`
+clause of any kind. Neither classic OS/2 REXX nor OREXX ever had
+*any* form of `ADDRESS WITH`, `USING` included; the whole I/O
+redirection clause is an enhancement neither IBM product picked up.
+To supply empty stdin (preventing a child process from blocking
+waiting for input), define an empty stem and pass it as `INPUT STEM`:
 
 ```rexx
 noIn.0 = 0
@@ -1117,24 +1123,23 @@ scenario needed one.
 
 **Loading the package is not the same as every function in it being
 present.** The repertoire behind the name `RexxUtil` is not itself
-standardized, and varies by implementation. OS/2's original RexxUtil
-includes Workplace-Shell-specific functions — `SysCreateObject`,
-`SysDestroyObject`, `SysSetObjectData`, `SysQueryClassList`, and the
-like — that have no counterpart at all outside OS/2/eComStation/ArcaOS,
-since they manipulate an object-oriented desktop shell those other
-platforms don't have. Checked across three implementations: ordinary
-file/system functions such as `SysFileTree`, `SysMkDir`, and
+standardized, and varies by implementation. Checked directly against
+IBM's own OS/2 reference documentation, for both classic Rexx and
+OREXX: both document the full Workplace-Shell-specific set —
+`SysCreateObject`, `SysDestroyObject`, `SysSetObjectData`,
+`SysQueryClassList`, and the like — confirming this was the original
+repertoire on OS/2 itself, where the Workplace Shell these functions
+manipulate actually exists. Checked across two later implementations:
+ordinary file/system functions such as `SysFileTree`, `SysMkDir`, and
 `SysTempFileName` are part of the common core, present in both ooRexx
 (verified directly against ooRexx 5.2.0, via `RxFuncQuery` after
 `SysLoadFuncs`) and Regina's `RegUtil` package (per its own reference
-manual). The Workplace-Shell-specific functions above are a different
-story: `RxFuncQuery` reports all four as **not** registered in ooRexx
-5.2.0, and none of the four appears anywhere in RegUtil's reference
-manual either — neither reimplements the OS/2-shell-specific portion
-of the original repertoire, only the platform-independent core.
-OBJREXX 6.00 (ArcaOS) is documented elsewhere as having a RexxUtil
-function set that differs from ooRexx's, but has not been checked
-function-by-function here.
+manual). The Workplace-Shell-specific functions are a different story:
+`RxFuncQuery` reports all four as **not** registered in ooRexx 5.2.0,
+and none of the four appears anywhere in RegUtil's reference manual
+either — neither reimplements the OS/2-shell-specific portion of the
+original repertoire, only the platform-independent core that still
+makes sense on a platform without a Workplace Shell.
 
 A blanket "is RexxUtil loaded?" check, whether via Figure 12's flag or
 `RxFuncQuery('SysLoadFuncs')`, only tells you the package itself
