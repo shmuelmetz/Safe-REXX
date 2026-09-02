@@ -29,10 +29,10 @@ permission is prohibited.
 ## Table of contents
 
 1. [Introduction](#introduction)
-2. [What is REXX?](#what-is-rexx)
-3. [Platforms and standards conformance](#platforms-and-standards)
-4. [Summary of pitfalls](#summary-of-pitfalls)
-5. [Specific examples and recommended avoidance tactics](#specific-examples)
+   - [What is REXX?](#what-is-rexx)
+   - [Platforms and standards conformance](#platforms-and-standards)
+   - [Summary of pitfalls](#summary-of-pitfalls)
+2. [Specific examples and recommended avoidance tactics](#specific-examples)
    - [Abutment](#abutment)
    - [Continuation](#continuation)
    - [Keywords](#keywords)
@@ -42,20 +42,20 @@ permission is prohibited.
    - [Type and range checking](#type-and-range-checking)
    - [Dropped symbols used as constants](#dropped-symbols)
    - [Variable references](#variable-references)
-6. [Compatibility and environmental considerations](#compatibility)
+3. [Compatibility and environmental considerations](#compatibility)
    - [ADDRESS and the default environment](#address)
    - [Environmental factors](#environmental-factors)
    - [I/O model](#io-model)
    - [PARSE SOURCE and VERSION](#parse-source-and-version)
    - [Availability of optional function libraries](#function-library-availability)
    - [Variable patterns](#variable-patterns)
-7. [ooRexx-specific pitfalls](#oorexx-specific-pitfalls)
-8. [Debugging: reach for TRACE before guessing from black-box behavior](#debugging)
-9. [Recapitulation](#recapitulation)
-10. [References](#references)
-11. [Notes and trademarks](#notes-and-trademarks)
-12. [About the author](#about-the-author)
-13. [Colophon](#colophon)
+4. [ooRexx-specific pitfalls](#oorexx-specific-pitfalls)
+5. [Debugging: reach for TRACE before guessing from black-box behavior](#debugging)
+6. [Recapitulation](#recapitulation)
+7. [References](#references)
+8. [Notes and trademarks](#notes-and-trademarks)
+9. [About the author](#about-the-author)
+10. [Colophon](#colophon)
 
 ---
 
@@ -108,6 +108,8 @@ Rexx-derived syntax to Java bytecode (or Java source) rather than
 running under a classic-Rexx or ooRexx interpreter, and its typed
 variables and Java interop give it a different pitfall profile than
 the dialects covered here.
+
+### <a id="summary-of-pitfalls"></a>Summary of pitfalls
 
 REXX has a number of features that can trap the unwary. This does not
 mean that REXX is a bad language, just that you need to understand it
