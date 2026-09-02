@@ -478,6 +478,28 @@ parse var foo template          /* foo is a plain variable */
 parse value foo || bar with template   /* a genuine expression source */
 ```
 
+**ooRexx note**: for pattern matching that outgrows what a `PARSE`
+template can express cleanly — optional pieces, repetition, character
+classes, alternatives — ooRexx's `.RegularExpression` class is an
+alternative worth reaching for instead of contorting a template. It
+uses its own pattern syntax (`|` for alternation, `*`/`+`/`{n}` for
+repetition, `[...]` for character sets, `:alpha:`/`:digit:`-style
+named classes), not POSIX or PCRE syntax. It is not preloaded; a
+`::REQUIRES` is needed:
+
+```ooRexx
+str = 'name=John'
+re = .RegularExpression~new('[:alpha:]+=[:alpha:]+')
+say re~match(str)      -- 1: the whole string matches
+
+::requires "rxregexp.cls"
+```
+
+`match` returns 1 or 0 for whether `string` matches; `pos` locates a
+match's starting position instead of requiring the whole string to
+match. Reserve it for genuine pattern matching — plain fixed-position
+or delimiter-based extraction is still clearer with ordinary `PARSE`.
+
 ### <a id="scoping-rules"></a>Scoping rules
 
 Although superficially REXX appears to be a block-structured
@@ -650,13 +672,23 @@ say mystem.(i)         /* WRONG in any Rexx dialect: Error 43 --
 `mystem[i]` and `mystem.[i]` — are valid *only* in ooRexx; classic
 Rexx's own lexer has no defined meaning for `[`/`]` at all, so a
 classic-Rexx program can't reach for either by mistake in the first
-place. In ooRexx, both parse and run, but they do different things,
-and the difference isn't a special "bracket tail" syntax — it's the
-same general rule ooRexx applies everywhere: `[]` is an ordinary
-message send, and its meaning depends entirely on the class of
-whatever comes before it. On a `.String` it selects a character; on a
-`.Stem` it selects an element. The two examples below differ only in
-*which* object the whole expression up to the bracket evaluates to:
+place. In ooRexx, both parse and run: `[]` is genuinely one uniform
+mechanism — bracket notation sends a message named `[]` to the
+receiver, with whatever's inside the brackets passed as its argument
+list — but what that list *means* is entirely up to the receiving
+class's own `[]` method, and the two below interpret it very
+differently:
+
+- On a `.String`, `[]` is character/substring extraction (ooRexx
+  Language Reference §5.1.7.22): `"abc"[2]` is `"b"`; with a second,
+  comma-separated argument, `"abc"[2,4]` is a substring, `"bc"`.
+- On a `.Stem`, `[]` is documented separately, under "Evaluated
+  Compound Variables" (§1.13.5.1), as an alternate way to *construct a
+  compound-variable tail*: each comma-separated expression is
+  evaluated to a string, and the results are joined with periods to
+  form the tail — `a.[1+2, 3+4]` assigns `a.3.7`, exactly as if you
+  had written that dotted tail yourself. It is not positional
+  "element N" indexing the way `.Array`'s `[]` is.
 
 ```ooRexx
 say mystem[i]           /* WRONG, but raises NO error: 'mystem' with
@@ -669,10 +701,12 @@ say mystem[i]           /* WRONG, but raises NO error: 'mystem' with
 say mystem.[i]          /* CORRECT: 'three'. 'mystem.' -- the stem
                             itself, trailing dot, no tail -- is always
                             already bound to a genuine Stem object
-                            (ooRexx Language Reference §1.13.4: "The
-                            value of a stem is always a Stem object");
-                            [] on a Stem selects an element, exactly
-                            as it would on realStem below */
+                            (ooRexx Language Reference §1.13.4); its []
+                            method takes i, evaluates it, and uses the
+                            result directly as the tail -- the single-
+                            expression case of the same tail-building
+                            mechanism as the two-expression example
+                            above */
 ```
 
 A third, unrelated trap: using another compound variable directly as
@@ -918,6 +952,24 @@ do i = 1 to err.0
     say '  [stderr]' err.i
 end
 ```
+
+TSO/E REXX has no `ADDRESS WITH` at all to do this with — like classic
+OS/2 REXX and OREXX, it predates the ANSI-1996 enhancement. Its own
+mechanism for capturing host-command output is the `OUTTRAP` built-in
+function instead, which traps subsequent command output into a stem
+(or the program stack) until turned back off:
+
+```rexx
+call outtrap 'mystem.'     /* start trapping into mystem. */
+'LISTC LEVEL(MY.DATA)'
+call outtrap 'off'         /* stop trapping */
+do i = 1 to mystem.0
+    say mystem.i
+end
+```
+
+See [Continuation](#continuation) above (Figures 2 and 3) for the
+continuation pitfalls specific to `OUTTRAP`'s own argument list.
 
 Valid I/O redirect types in the `WITH` clause are `NORMAL`, `STEM`,
 `STREAM`, and `USING` — `STRING` is not a valid type. Of these, `USING`
