@@ -761,6 +761,24 @@ passing constants and using them to construct names. This is an
 extremely common and powerful technique, especially in conjunction
 with compound variables. However, there are a few pitfalls.
 
+**When all you need is to read or set a variable by name, prefer
+`VALUE()` to `INTERPRET`.** `VALUE(name)` reads the variable named
+`name`; `VALUE(name, newvalue)` sets it and returns the *old* value.
+Building a string and running it through `INTERPRET` can achieve the
+same thing, but `INTERPRET` executes whatever Rexx source text it is
+handed — not just an assignment to one variable — which matters the
+moment `name` is not a value you fully control. Verified directly:
+handing the same crafted string (a syntactically invalid variable name
+with a second clause hidden after a semicolon) to each — `VALUE()`
+simply raised a `SYNTAX` condition on the malformed name and executed
+nothing else, while `INTERPRET` began executing the hidden second
+clause (visibly compiling and invoking the routine it named) before
+failing only because that call was missing a required argument, not
+because the injection itself was ever blocked. Reserve `INTERPRET` for
+genuinely dynamic code — constructing a whole statement or expression
+at run time — not as a heavier substitute for a single indirect
+variable reference.
+
 If you call a procedure that has an `EXPOSE` clause on the
 `PROCEDURE` statement, it will only have access to the variables that
 you exposed. If you pass an argument containing the name of some
