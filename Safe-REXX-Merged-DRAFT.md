@@ -630,18 +630,18 @@ it does mean a directive body's extent is fixed by the file's
 directive structure, not purely by dynamic control flow the way an
 internal-subroutine's scope is.
 
-A directive also closes an internal classic-Rexx label reached via
-`CALL`, when execution reaches it — but not with `RETURN` semantics.
-Verified directly, since this is easy to get wrong by analogy: calling
-an internal label whose code has no explicit `RETURN` and simply runs
-into a `::` directive boundary terminates the **entire program**
-cleanly (no error condition raised, nothing returned to the caller) —
-the same as an implicit `EXIT`, not a `RETURN`. This is genuinely
-different from falling off the end of a called label into *ordinary*
-code with no directive present, which is plain sequential fall-through
-into whatever comes next, executing it as if it were part of the same
-routine. A directive boundary specifically ends the program; a
-directiveless fall-through does not.
+**Pitfall — falling through into a directive silently ends the whole
+program.** Calling an internal label whose code has no explicit
+`RETURN`, when the next thing in the file is a `::` directive rather
+than more ordinary code, does not return control to the caller the
+way falling off the end of an undirected routine would. Verified
+directly, since this is easy to get wrong by analogy: it terminates
+the **entire program** cleanly instead — no error condition raised,
+nothing returned to the caller, the same as an implicit `EXIT`. Code
+after the `CALL` simply never runs, with no diagnostic pointing at
+why. This is a real risk specifically in ooRexx files that mix
+classic-style internal labels with directives, since a directive now
+sits exactly where "just more code" used to be assumed.
 
 Do not write code intended to serve as both inline and out-of-line
 code; programs in which you both call and fall through into the same
@@ -650,6 +650,22 @@ with a statement that will prevent accidentally falling into it,
 e.g., `EXIT`; if your logic permits, begin the procedure with a
 `PROCEDURE` statement, which must be the first statement after the
 label. See Figure 9.
+
+**This is not just a style preference — falling through into a label
+that starts with `PROCEDURE` is a hard error, not silent
+misbehavior.** Verified directly: `PROCEDURE` must be the first
+instruction actually *executed* immediately after its own label is
+reached via `CALL` (or a function invocation); reaching it any other
+way — straight-line fall-through from the code above it — raises
+`Error 17: Unexpected PROCEDURE.` as a `SYNTAX` condition, at the
+`PROCEDURE` line itself. This is standard Rexx behavior, not
+ooRexx-specific. It's the mechanism *behind* the "notoriously error
+prone" warning above: an unguarded fall-through into a `PROCEDURE`-led
+subprocedure doesn't just risk exposing variables unexpectedly — it
+crashes outright the moment it happens, which is at least easier to
+notice than either of the two silent failure modes above (a
+directive boundary ending the program, or plain code silently running
+with the wrong variable scope).
 
 #### Figure 9: Procedure isolation
 
