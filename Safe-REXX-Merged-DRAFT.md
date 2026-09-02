@@ -8,10 +8,18 @@ finished paper. What's done:
     both source papers is here; nothing from either original was
     silently dropped (see "Merge notes" at the end of each section
     that differed materially between the two sources).
+  - Checked ALL files in the repo, not just the two 2023 HTML
+    sources, specifically to catch anything the 2023 web revision
+    itself might have dropped along the way (see "Source-file
+    provenance" below) — this found one genuinely missing section,
+    now restored (see Figure 12 and its surrounding text).
   - A new ooRexx-guidance callout under most sections, grounded in
     AI-Priming/ooRexx/RULES.md's already-verified rules (not
     invented) — each one traceable back to that file.
-  - Figures renumbered into one consistent sequence (1-17).
+  - Figures renumbered into one consistent sequence (1-12; the new
+    "ooRexx-specific pitfalls" section's code examples are
+    deliberately unnumbered, since that section is new content, not
+    part of the renumbered classic-paper sequence).
   - PARSE VERSION's actual ooRexx output string verified empirically
     against a real ooRexx 5.2.0 install before writing about it
     (see the note under "PARSE SOURCE and VERSION").
@@ -29,34 +37,37 @@ ArcaOS"):
     mapped out yet.
   - Windows-specific ooRexx guidance (path handling, case sensitivity
     of `value()` for environment variables) is present but thin.
-  - The two archival figure/.FIG files (OS2DEV/SAFEREXX.FIG,
-    NASPA/SAFEREXX.FIG — both just Figure 1 in the papers' original
-    1993 plain-text form) and the OS2DEV/SAFEREXX.THD correspondence
-    thread with the OS/2 Developer editor are historical provenance,
-    already fully represented in the merged Figure 1 below and the
-    "Publication history" note — not separately reproduced.
 
-Source-file provenance, checked before merging, not assumed:
+Source-file provenance, checked across every file in the repo (both
+top-level and every subdirectory: NASPA/, OS2DEV/, Attached/, TSM/,
+$REXX/, "Safe REXX/"), not just the two obvious 2023 HTML files:
   - safe_rexx_desktop.html and safe_rexx_enterprise.html (both dated
     Jan/Feb 2023) are the correctly-labeled, already-modernized full
     texts — confirmed by reading both in full and diffing them
     against each other section by section.
-  - A real filename trap exists in the repo's archival copies: NASPA/
-    SAFEREXX.* is NOT the Desktop paper despite matching the
-    top-level SAFEREXX.* filename pattern — its actual title text
-    (verified by extracting readable runs from the binary .DOC) is
-    "Safe REXX in the Enterprise". OS2DEV/SAFEREXX.* is genuinely the
+  - The name "SAFEREXX" is ambiguous, not a mislabeling: both papers
+    once shared that working filename before one was later
+    disambiguated to "saferexxe". NASPA/SAFEREXX.* is, despite the
+    shared name, the Enterprise paper's own archived copy (its actual
+    title text, verified by extracting readable runs from the binary
+    .DOC, is "Safe REXX in the Enterprise"); OS2DEV/SAFEREXX.* is the
     Desktop paper (confirmed by its embedded "OS/2 Developer" journal
-    header). The top-level SAFEREXX.DOC and SAFEREXX.sdw were copied
-    from NASPA's mislabeled copies and are therefore Enterprise
-    content sitting next to Desktop-labeled files — this was NOT used
-    as a source for this draft precisely because of that mislabeling;
-    only the correctly-verified 2023 HTML versions were used.
+    submission header). The top-level SAFEREXX.DOC and SAFEREXX.sdw
+    happen to be copies of NASPA's (Enterprise) files rather than
+    OS2DEV's (Desktop) ones, sitting next to the Desktop-sourced
+    SAFEREXX.ASC/.FIG/.THD/.W51 at the same top level — worth knowing
+    if anyone reaches for "the top-level SAFEREXX.* files" as a set
+    expecting them all to be one paper. This draft used only the
+    correctly-verified 2023 HTML versions as source text, not any of
+    the top-level files, so the ambiguity didn't affect it either way.
   - The two 2023 HTML versions are closely related, not independently
     authored: NASPA/SAFEREXX.DOC's own text says "A slightly different
     version of this article was printed in the February 1995 OS/2
     Magazine" — i.e. Enterprise is the earlier/base text and Desktop
-    is a deliberately adapted variant for a PC-focused readership.
+    is a deliberately adapted variant for a PC-focused readership,
+    confirmed independently by OS2DEV/SAFEREXX.THD, the author's own
+    1993 pitch letter to OS/2 Developer's editor, which mentions
+    intending "the same, or a similar, article" for NaSPA too.
     Confirmed by direct diff: same section order throughout, but
     Desktop has an entire extra pitfall (the WITH/VALUE parse-keyword
     confusion, Figures 6-8 below) that Enterprise omits completely,
@@ -70,6 +81,26 @@ Source-file provenance, checked before merging, not assumed:
     Moot here since this draft renumbers everything into one sequence
     anyway, but worth fixing in safe_rexx_enterprise.html directly if
     that file is kept in independent circulation going forward.
+  - Real gap found by diffing the 2023 HTML against BOTH papers'
+    original 1993 plain-text submissions (OS2DEV/SAFEREXX.ASC,
+    NASPA/SAFEREXX.ASC) and an intermediate ~1997-98 web-published
+    snapshot (Attached/Vpub/safe_rexx.html, "Safe REXX/safe_rexx.html",
+    both mirrored again under TSM/ — confirmed as presentation-only
+    variants of that same snapshot, not distinct content, by direct
+    diff): both papers originally had a subsection, "REXXUTIL and
+    Emergency Boot Disks", positioned between "PARSE SOURCE and
+    VERSION" and "Variable patterns", that the final 2023 revision
+    dropped from *both* papers identically. Not an accident specific
+    to one paper or one revision pass — a deliberate-looking cut, made
+    the same way twice, of what by 2023 was genuinely obsolete advice
+    (OS/2's Presentation Manager was too large for a 1.44MB emergency
+    boot floppy, so scripts meant to run from one needed a
+    non-RexxUtil-dependent fallback path). The underlying principle —
+    don't assume an optional function library is loaded; check and
+    fall back — still generalizes today, so it's restored below in
+    modernized form (Figure 12) rather than left dropped a second
+    time, with the original figure's exact code preserved and the
+    obsolete framing swapped for the still-current one.
 -->
 
 # Safe REXX: Pitfalls for Classic Rexx and ooRexx, or Will They Still Respect My Code in the Morning?
@@ -87,10 +118,10 @@ for the web in January/February 2023. This edition merges them into
 one text, adds explicit ooRexx guidance throughout (both papers
 predate ooRexx and explicitly disclaimed direct experience with
 Object REXX), and extends the scope to the fuller range of platforms
-in current use: classic Rexx, ooRexx, TSO/E, ISPF, OMVS, System REXX,
-CMS, OS/2, Linux, Windows, and ArcaOS.
+and dialects in current use: TSO/E, ISPF, OMVS, System REXX, CMS,
+e.g., Classic REXX, Object Rexx, ooRexx, Regina.
 
-Copyright 1993, 1998, 2023 by Shmuel (Seymour J.) Metz. All rights
+Copyright 1993, 1998, 2023, 2026 by Shmuel (Seymour J.) Metz. All rights
 reserved. Permission for reproduction in whole or in part is hereby
 granted to educational, non-profit and computer user groups for
 internal, non-profit use, provided credit is given and this notice is
@@ -119,6 +150,7 @@ permission is prohibited.
    - [Environmental factors](#environmental-factors)
    - [I/O model](#io-model)
    - [PARSE SOURCE and VERSION](#parse-source-and-version)
+   - [Availability of optional function libraries](#function-library-availability)
    - [Variable patterns](#variable-patterns)
 6. [ooRexx-specific pitfalls](#oorexx-specific-pitfalls)
 7. [Recapitulation](#recapitulation)
@@ -970,6 +1002,59 @@ distinguish ooRexx from classic implementations, match on a `name`
 that begins with `REXX-ooRexx`, e.g., `when name~abbrev('REXX-ooRexx')
 then do ... end` — do not assume `name` will be one of the two classic
 values above.
+
+<a id="function-library-availability"></a>
+### Availability of optional function libraries
+
+Do not assume that an optional function library your code depends on
+is actually loaded in every environment it might run in. The original
+form of this advice, in both source papers, was framed around a
+specific and by-2023 obsolete scenario: OS/2's RexxUtil requires
+Presentation Manager, which was too large to fit on a 1.44MB emergency
+boot floppy, so code meant to run from one had to avoid depending on
+RexxUtil and fall back to a more primitive equivalent — one route
+being `BOOTOS2` to build a bootable maintenance partition or emergency
+floppy still capable of loading RexxUtil, WPS, or PM sessions on a
+minimum boot configuration. See Figure 12.
+
+#### Figure 12: Function-library availability check
+
+```rexx
+if REXXUTIL_loaded then do
+   stat = SysFileTree(filespec, 'filelist.', 'FSO')
+   do i = 1 to filespec.0
+      ...
+      end
+   end
+else do
+   'DIR' filespec '/F /O > WORK_FILE'
+   ...
+   end
+```
+
+The emergency-boot-floppy scenario itself is long obsolete, but the
+underlying principle is not: any function library your code treats as
+"just there" — RexxUtil, an ooRexx package pulled in via `::REQUIRES`,
+a third-party library like REXXLIB — may genuinely not be loaded in
+every environment your code might run in, and checking before you
+depend on it is cheap insurance.
+
+**ooRexx note**: the equivalent check before using a RexxUtil function
+is `RxFuncQuery`, and the standard way to load the package at all
+(needed at least once per process, since it's not autoloaded the way
+some built-ins are) is:
+
+```rexx
+call RxFuncAdd 'SysLoadFuncs', 'RexxUtil', 'SysLoadFuncs'
+call SysLoadFuncs
+```
+
+running this unconditionally at the top of a script is the practical,
+idiomatic equivalent of Figure 12's availability check for the common
+case where you'd rather just load the package than branch on whether
+it's there — reach for the explicit `RxFuncQuery` branch only when a
+genuine no-RexxUtil fallback path exists, the way the original boot-disk
+scenario needed one.
 
 <a id="variable-patterns"></a>
 ### Variable patterns
