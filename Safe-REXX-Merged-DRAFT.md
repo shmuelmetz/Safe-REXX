@@ -40,6 +40,20 @@ finished paper. What's done:
     Continuation section's "continues if it would be syntactically
     invalid" framing was an oversimplification, corrected to name the
     actual triggering constructs.
+  - New "Platforms and standards conformance" section added, researched
+    rather than assumed: confirmed via rexxinfo.org's classic-Rexx
+    function comparison chart that z/VM CMS REXX has NOT been upgraded
+    to ANSI X3.274-1996 level -- it's listed identically alongside
+    z/OS TSO/E REXX as lacking CHANGESTR/COUNTSTR/QUALIFY, the same
+    situation, not something CMS has that TSO/E lacks or vice versa.
+    IBM's own PDF references (vm.ibm.com, publibfp.dhe.ibm.com,
+    ibm.com/docs) were not directly fetchable in this pass (TLS
+    certificate errors and 403s from this tooling, not necessarily a
+    real access restriction) -- the rexxinfo.org chart was the source
+    that actually resolved it, cross-checked against a separate
+    Google Groups thread and ooRexx's own SourceForge feature-request
+    tracker reporting the identical z/OS-side "UNRECOGNIZED FUNCTION"
+    behavior for CHANGESTR.
 
 What's NOT done yet (per the README's stated scope: "classic Rexx,
 ooRexx, TSO/E, ISPF, OMVS, System REXX, CMS, OS/2, Linux, Windows,
@@ -151,8 +165,9 @@ permission is prohibited.
 
 1. [Introduction](#introduction)
 2. [What is REXX?](#what-is-rexx)
-3. [Summary of pitfalls](#summary-of-pitfalls)
-4. [Specific examples and recommended avoidance tactics](#specific-examples)
+3. [Platforms and standards conformance](#platforms-and-standards)
+5. [Summary of pitfalls](#summary-of-pitfalls)
+6. [Specific examples and recommended avoidance tactics](#specific-examples)
    - [Abutment](#abutment)
    - [Continuation](#continuation)
    - [Keywords](#keywords)
@@ -162,18 +177,18 @@ permission is prohibited.
    - [Type and range checking](#type-and-range-checking)
    - [Uninitialized variables used as constants](#uninitialized-variables)
    - [Variable references](#variable-references)
-5. [Compatibility and environmental considerations](#compatibility)
+7. [Compatibility and environmental considerations](#compatibility)
    - [ADDRESS and the default environment](#address)
    - [Environmental factors](#environmental-factors)
    - [I/O model](#io-model)
    - [PARSE SOURCE and VERSION](#parse-source-and-version)
    - [Availability of optional function libraries](#function-library-availability)
    - [Variable patterns](#variable-patterns)
-6. [ooRexx-specific pitfalls](#oorexx-specific-pitfalls)
-7. [Recapitulation](#recapitulation)
-8. [References](#references)
-9. [Notes and trademarks](#notes-and-trademarks)
-10. [About the author](#about-the-author)
+8. [ooRexx-specific pitfalls](#oorexx-specific-pitfalls)
+9. [Recapitulation](#recapitulation)
+10. [References](#references)
+11. [Notes and trademarks](#notes-and-trademarks)
+12. [About the author](#about-the-author)
 
 ---
 
@@ -196,8 +211,33 @@ message-send syntax on top. Everything in this edition that applies
 to classic Rexx applies unchanged to ooRexx unless a specific note
 says otherwise.
 
-<a id="summary-of-pitfalls"></a>
-### Summary of pitfalls
+<a id="platforms-and-standards"></a>
+### Platforms and standards conformance
+
+The American National Standards Institute published a Rexx standard,
+ANSI X3.274-1996, adding a number of enhancements beyond Cowlishaw's
+original *The Rexx Language* 2nd-edition ("TRL-2") specification —
+among them the `CHANGESTR`, `COUNTSTR`, and `QUALIFY` built-in
+functions and the `LOSTDIGITS` condition. ooRexx and Regina both
+implement these ANSI-1996 enhancements. IBM's mainframe classic-Rexx
+interpreters do not: TSO/E REXX (z/OS) and CMS REXX (z/VM) are both
+explicitly documented as lacking `CHANGESTR`/`COUNTSTR`/`QUALIFY` —
+confirmed directly against rexxinfo.org's classic-Rexx function
+reference chart, which lists both mainframe interpreters identically
+as "not supported" for these, rather than treating z/VM as somehow
+upgraded past z/OS's level. Neither mainframe interpreter has been
+brought up to ANSI-1996 level; both remain at essentially the older
+TRL-2 function set. This matters when porting code between
+mainframe and non-mainframe Rexx: code that leans on `CHANGESTR` or
+`COUNTSTR` for convenience will not run unmodified on TSO/E or CMS,
+regardless of which one you started on.
+
+TSO/E REXX does have one significant environment-specific carve-out
+despite this: it supports stream I/O (`LINEIN`, `LINEOUT`, `STREAM`,
+and the like) only when running in the UNIX System Services (OMVS)
+shell, not in an ordinary TSO/E address space, which uses `EXECIO`
+instead — see [I/O model](#io-model) below for the full detail and a
+worked example of both forms.
 
 REXX has a number of features that can trap the unwary. This does not
 mean that REXX is a bad language, just that you need to understand it
@@ -1300,6 +1340,8 @@ directly by the author.
 - The REXX Language: A Practical Approach to Programming, 2nd Edition. By Michael F. Cowlishaw (Prentice-Hall, Inc., a division of Simon & Schuster), Englewood Cliffs, New Jersey 07632, ISBN 0-13-780651-5
 - Open Object Rexx (ooRexx) Reference, The RexxLA/Open Object Rexx project, <https://www.oorexx.org/>
 - Josep Maria Blasco's Rexx Parser (AST/element parser for Rexx, ooRexx, and Executor, written in ooRexx itself), <https://github.com/JosepMariaBlasco/rexx-parser>, also distributed as part of RexxLA's net-oo-rexx
+- ANSI X3.274-1996, Information Technology — Programming Language REXX, American National Standards Institute
+- Classic Rexx built-in function reference (ANSI-1996/TRL-2/z/OS/z/VM comparison chart), rexxinfo.org, <https://rexxinfo.org/reference/articles/classic_rexx_functions_w_nav_menu.html>
 
 <a id="notes-and-trademarks"></a>
 ## Notes and trademarks
