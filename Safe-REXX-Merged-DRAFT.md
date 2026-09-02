@@ -845,10 +845,14 @@ Valid I/O redirect types in the `WITH` clause are `NORMAL`, `STEM`,
 stem or stream needed — goes beyond ANSI X3.274-1996's own `ADDRESS
 WITH` semantics, which define only `STREAM` and `STEM` as resource
 types; `NORMAL`/`STEM`/`STREAM` are standard, but `USING` is an
-extension. Verified working in ooRexx 5.2.0; not checked directly
-against OREXX or Regina. To supply empty stdin (preventing a child
-process from blocking waiting for input), define an empty stem and
-pass it as `INPUT STEM`:
+ooRexx extension, verified working in ooRexx 5.2.0. Checked against
+Regina's own reference manual: its `ADDRESS WITH` syntax diagram lists
+only `STREAM`, `STEM`, `LIFO`, and `FIFO` as resource types — `LIFO`
+and `FIFO` are Regina's own extensions beyond the ANSI baseline, but
+`USING` does not appear anywhere in the manual, so Regina does not
+have it. OREXX/OBJREXX not checked directly. To supply empty stdin
+(preventing a child process from blocking waiting for input), define
+an empty stem and pass it as `INPUT STEM`:
 
 ```rexx
 noIn.0 = 0
@@ -1113,22 +1117,31 @@ scenario needed one.
 
 **Loading the package is not the same as every function in it being
 present.** The repertoire behind the name `RexxUtil` is not itself
-standardized, and varies by implementation: OS/2's original RexxUtil
+standardized, and varies by implementation. OS/2's original RexxUtil
 includes Workplace-Shell-specific functions — `SysCreateObject`,
 `SysDestroyObject`, `SysSetObjectData`, `SysQueryClassList`, and the
 like — that have no counterpart at all outside OS/2/eComStation/ArcaOS,
 since they manipulate an object-oriented desktop shell those other
-platforms don't have. Verified directly against ooRexx 5.2.0: after
-`SysLoadFuncs`, ordinary file/system functions such as `SysFileTree`,
-`SysMkDir`, and `SysTempFileName` are present, but `RxFuncQuery`
-reports every one of those four WPS-specific functions as **not**
-registered. A blanket "is RexxUtil loaded?" check, whether via Figure
-12's flag or `RxFuncQuery('SysLoadFuncs')`, only tells you the package
-itself loaded — it says nothing about whether the *specific* function
-you're about to call is part of that implementation's repertoire.
-Guard any WPS-specific (or otherwise platform-specific) call with its
-own `RxFuncQuery` on that function's own name, not just on the
-package.
+platforms don't have. Checked across three implementations: ordinary
+file/system functions such as `SysFileTree`, `SysMkDir`, and
+`SysTempFileName` are part of the common core, present in both ooRexx
+(verified directly against ooRexx 5.2.0, via `RxFuncQuery` after
+`SysLoadFuncs`) and Regina's `RegUtil` package (per its own reference
+manual). The Workplace-Shell-specific functions above are a different
+story: `RxFuncQuery` reports all four as **not** registered in ooRexx
+5.2.0, and none of the four appears anywhere in RegUtil's reference
+manual either — neither reimplements the OS/2-shell-specific portion
+of the original repertoire, only the platform-independent core.
+OBJREXX 6.00 (ArcaOS) is documented elsewhere as having a RexxUtil
+function set that differs from ooRexx's, but has not been checked
+function-by-function here.
+
+A blanket "is RexxUtil loaded?" check, whether via Figure 12's flag or
+`RxFuncQuery('SysLoadFuncs')`, only tells you the package itself
+loaded — it says nothing about whether the *specific* function you're
+about to call is part of that implementation's repertoire. Guard any
+WPS-specific (or otherwise platform-specific) call with its own
+`RxFuncQuery` on that function's own name, not just on the package.
 
 ### <a id="variable-patterns"></a>Variable patterns
 
