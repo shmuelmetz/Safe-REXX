@@ -774,6 +774,14 @@ with compound variables. However, there are a few pitfalls.
 **When all you need is to read or set a variable by name, prefer
 `VALUE()` to `INTERPRET`.** `VALUE(name)` reads the variable named
 `name`; `VALUE(name, newvalue)` sets it and returns the *old* value.
+`VALUE` also takes an optional third argument, `selector`, naming a
+variable pool other than the program's own — `VALUE(name, newvalue,
+'ENVIRONMENT')` reads or sets an environment variable instead of a
+Rexx variable, the mechanism behind the `OS2ENVIRONMENT` examples in
+Figure 2 above — something `INTERPRET` has no direct equivalent for at
+all. The third argument is not universal, though: REXX/VM under GCS
+(see [ADDRESS and the default environment](#address) above) does not
+support the `selector` argument at all, only the two-argument form.
 Building a string and running it through `INTERPRET` can achieve the
 same thing, but `INTERPRET` executes whatever Rexx source text it is
 handed — not just an assignment to one variable — which matters the
@@ -859,19 +867,30 @@ small fixed set the interpreter itself provides, or something a host
 application registers at run time (an editor's macro environment,
 for instance), and the two kinds are easy to conflate:
 
-| Platform / dialect | Default environment | Other environments |
-|---|---|---|
-| OS/2 classic REXX and OREXX | `CMD` | Whatever the host application registers (e.g. `EDIT` for an editor) — `CMD` is the only OS/2-native built-in. (Per IBM's own Procedures Language 2/REXX Reference and Object REXX Reference.) |
-| ooRexx | `CMD` on Windows | `SYSTEM`, `PATH` (ooRexx 5.2.0); the Linux default may differ. |
-| Regina | `SYSTEM` (aka `ENVIRONMENT`/`OS2ENVIRONMENT`) | `COMMAND` (aka `CMD`/`PATH`), `REXX` (aka `REGINA`, runs the command in a fresh interpreter instance). Per Regina's own reference manual. |
-| TSO/E REXX | `TSO` | `ISPEXEC` (ISPF services, available only when running under ISPF), `ISREDIT` (ISPF/PDF edit macros, available only in an edit session). |
-| CMS REXX (VM/SP) | `CMS`/`COMMAND` | `CP` (hypervisor commands). |
-| System REXX (z/OS) | `MVS` (when configured `TSO=NO`) | `ATTACH`, `ATTCHMVS`, `ATTCHPGM`, `LINK`, `LINKMVS`, `APPCMVS`, `BCPii`, `CPICOMM`, `LU62`; a `TSO=YES` exec additionally gets `TSO` and the ISPF-style environments above. |
+A platform name alone is too coarse here — the *invocation context*,
+not just the OS, decides the default:
 
-The first two rows and Regina's row rest on each implementation's own
-reference manual; the TSO/E, CMS, and System REXX rows are standard,
-well-documented IBM behavior, but consult your own system's REXX
-Reference for the exact environment names before relying on them.
+| Invocation context | Default environment | Other environments |
+|---|---|---|
+| OS/2 classic REXX and OREXX, run directly | `CMD` | Whatever the host application registers (e.g. `EDIT` for an editor) — `CMD` is the only OS/2-native built-in. |
+| ooRexx, run directly | `CMD` on Windows | `SYSTEM`, `PATH` (ooRexx 5.2.0); the Linux default may differ. |
+| Regina, run directly | `SYSTEM` (aka `ENVIRONMENT`/`OS2ENVIRONMENT`) | `COMMAND` (aka `CMD`/`PATH`), `REXX` (aka `REGINA`, runs the command in a fresh interpreter instance). |
+| TSO READY prompt | `TSO` | Whatever a running application has registered. |
+| ISPF (an exec invoked as an ISPF command or from a panel, not editing) | `TSO` — unchanged from the bare TSO case | `ISPEXEC` (ISPF services: `DISPLAY`, `SELECT`, and the like). |
+| ISPF/PDF EDIT macro | `TSO` — **still TSO, not ISREDIT**, even inside an edit macro | `ISPEXEC`, `ISREDIT` (edit subcommands) — both must be addressed explicitly; neither is ever the default. |
+| OMVS shell (z/OS UNIX System Services) | `SH` | `TSO` (to reach TSO/E commands from the shell), `MVS`, `SYSCALL`. |
+| System REXX (z/OS, outside TSO and batch) | `MVS` (when configured `TSO=NO`) | `ATTACH`, `ATTCHMVS`, `ATTCHPGM`, `LINK`, `LINKMVS`, `APPCMVS`, `BCPii`, `CPICOMM`, `LU62`; a `TSO=YES` exec additionally gets `TSO` and the ISPF-style environments above. |
+| CMS command line | `CMS` | `COMMAND` (skips the EXEC search CMS itself does), `CP` (hypervisor commands). |
+| GCS (Group Control System, a z/VM guest environment distinct from CMS) | `GCS` (full command resolution: exec, then GCS module, then CP command) | `COMMAND` (host/GCS commands only, narrower than the default). GCS's REXX also drops the `selector` third argument to `VALUE()` entirely — see [Variable references](#variable-references) above. |
+| XEDIT macro (CMS's screen editor) | `XEDIT` | Falls through automatically — a clause XEDIT doesn't recognize is tried against `CMS`, then `CP`, with no `ADDRESS` needed for any of the three. |
+
+The CMS, GCS, and XEDIT rows are grounded in IBM's own z/VM REXX/VM
+Reference; the OMVS row in IBM's z/OS UNIX System Services REXX
+documentation. The OS/2-family, ooRexx, and Regina rows rest on each
+implementation's own reference manual. The TSO READY/ISPF/ISPF-EDIT
+rows and the System REXX row are standard, widely-documented IBM
+behavior, but consult your own system's REXX Reference for the exact
+environment names before relying on them.
 
 Standard Rexx (not an ooRexx-only extension) can capture a child
 process's stdout and stderr directly into stems, with no temp files or
