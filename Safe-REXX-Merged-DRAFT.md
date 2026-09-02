@@ -637,9 +637,8 @@ say mystem.i           /* CORRECT: 'three' -- bare-symbol substitution,
                            classic Rexx, no bracket needed at all */
 ```
 
-Two forms that look plausible by analogy are wrong, and one of them
-doesn't even error. The first is a genuine pitfall in any Rexx
-dialect:
+One form that looks plausible by analogy is a genuine pitfall in any
+Rexx dialect:
 
 ```rexx
 say mystem.(i)         /* WRONG in any Rexx dialect: Error 43 --
@@ -647,33 +646,33 @@ say mystem.(i)         /* WRONG in any Rexx dialect: Error 43 --
                            named MYSTEM */
 ```
 
-The second, `mystem[i]`, is where classic Rexx and ooRexx genuinely
-part ways. `[]` is an ooRexx operator (the String class's `[]`
-method), not a classic-Rexx construct at all — a classic-Rexx program
-can't reach for it by mistake in the first place, since classic Rexx's
-own lexer has no defined meaning for `[`/`]`. In ooRexx, though, it
-parses and runs cleanly, silently doing something entirely different
-from what was intended:
+**ooRexx note**: two more forms that look plausible by analogy —
+`mystem[i]` and `mystem.[i]` — are valid *only* in ooRexx; classic
+Rexx's own lexer has no defined meaning for `[`/`]` at all, so a
+classic-Rexx program can't reach for either by mistake in the first
+place. In ooRexx, both parse and run, but they do different things,
+and the difference isn't a special "bracket tail" syntax — it's the
+same general rule ooRexx applies everywhere: `[]` is an ordinary
+message send, and its meaning depends entirely on the class of
+whatever comes before it. On a `.String` it selects a character; on a
+`.Stem` it selects an element. The two examples below differ only in
+*which* object the whole expression up to the bracket evaluates to:
 
 ```ooRexx
-say mystem[i]           /* WRONG, and only valid at all in ooRexx --
-                            raises NO error */
-```
+say mystem[i]           /* WRONG, but raises NO error: 'mystem' with
+                            no trailing dot is a plain simple variable,
+                            still dropped, so it evaluates to the
+                            string "MYSTEM"; [] on a String selects a
+                            character -- this returns "S" (character
+                            3 of "MYSTEM"), not the stem element */
 
-an unset simple variable `MYSTEM` evaluates to the string `"MYSTEM"`,
-and `[]` on a bare string is ordinary character indexing — this
-returns `"S"` (character 3 of `"MYSTEM"`), not the stem element, with
-no error to flag the mistake.
-
-**ooRexx note**: ooRexx extends indirect tail access with dot-then-
-bracket, `mystem.[expr]`, which accepts a genuine *expression* as the
-tail — something bare-symbol substitution above cannot do in one step:
-
-```ooRexx
-j = 2
-say mystem.[j + 1]     /* CORRECT: 'three' -- ooRexx-only; classic
-                           Rexx would need a temp variable first,
-                           n = j + 1; say mystem.n */
+say mystem.[i]          /* CORRECT: 'three'. 'mystem.' -- the stem
+                            itself, trailing dot, no tail -- is always
+                            already bound to a genuine Stem object
+                            (ooRexx Language Reference §1.13.4: "The
+                            value of a stem is always a Stem object");
+                            [] on a Stem selects an element, exactly
+                            as it would on realStem below */
 ```
 
 A third, unrelated trap: using another compound variable directly as
@@ -694,16 +693,22 @@ The safe pattern here too: copy the index into a plain simple
 variable first, then use that variable as the tail (`n = orphans.0;
 orphans.n = value`).
 
-**ooRexx note**: a real `.stem` collection *object* is a further,
-genuinely ooRexx-only alternative — plain bracket notation on it is
-correct and idiomatic, but it is a **separate namespace** from a
-same-named classic compound variable, even when the base name matches:
+**ooRexx note**: `.stem~new` creates a fresh, otherwise-anonymous Stem
+object, and it is a **genuinely different object** from the Stem
+object automatically bound to a compound-variable stem of the same
+name — assigning the new object to a variable doesn't connect the two,
+even though both are ordinary Stem objects and both support the same
+bracket notation:
 
 ```ooRexx
 realStem = .stem~new
-realStem[3] = 'bar'
-say mystem.3            /* still dropped -- "MYSTEM.3" -- unrelated
-                            to realStem[3] even if named the same */
+realStem[9] = 'nine'
+say realStem.9          /* still dropped -- "REALSTEM.9" -- the
+                            compound-variable route uses its own,
+                            separate Stem object, sharing nothing with
+                            the one 'realStem' happens to hold */
+say (realStem. == realStem)   /* 0 -- confirms they're genuinely
+                                  different objects, not aliases */
 ```
 
 ### <a id="dropped-symbols"></a>Dropped symbols used as constants
@@ -1412,7 +1417,7 @@ directly by the author.
 - The REXX Language: A Practical Approach to Programming, 2nd Edition. By Michael F. Cowlishaw (Prentice-Hall, Inc., a division of Simon & Schuster), Englewood Cliffs, New Jersey 07632, ISBN 0-13-780651-5
 - Open Object Rexx (ooRexx) Reference, The RexxLA/Open Object Rexx project, <https://www.oorexx.org/>
 - Josep Maria Blasco's Rexx Parser (AST/element parser for Rexx, ooRexx, and Executor, written in ooRexx itself), <https://github.com/JosepMariaBlasco/rexx-parser>, also distributed as part of RexxLA's net-oo-rexx
-- ANSI X3.274-1996, Information Technology — Programming Language REXX, American National Standards Institute
+- ANSI X3.274-1996, Information Technology — Programming Language REXX, American National Standards Institute. Section citations in this edition are drawn from RexxLA's hosted copy of the X3J18 committee's document (X3J18-199X, <https://www.rexxla.org/rexxlang/standards/j18pub.pdf>), the last public-review draft before ratification, not the final published ANSI text itself.
 - Classic Rexx built-in function reference (ANSI-1996/TRL-2/z/OS/z/VM comparison chart), rexxinfo.org, <https://rexxinfo.org/reference/articles/classic_rexx_functions_w_nav_menu.html>
 
 ## <a id="notes-and-trademarks"></a>Notes and trademarks
