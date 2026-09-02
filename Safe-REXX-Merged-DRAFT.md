@@ -1507,11 +1507,12 @@ Its ooRexx-specific guidance was cross-referenced against a maintained
 ooRexx-conventions reference. Where this edition's text depends on a
 specific claim about interpreter behavior rather than an assumption by
 analogy — a `PARSE VERSION` output string, an error number, whether a
-given feature exists in a given dialect — that claim rests either on
-a running ooRexx 5.2.0 interpreter or on the implementation's own
-primary reference documentation (IBM's OS/2 Procedures Language
-2/REXX Reference and Object REXX Reference; Regina's reference
-manual), rather than on secondary sources or assumption.
+given feature or environment exists in a given dialect — that claim
+rests either on a running ooRexx 5.2.0 interpreter or on the specific
+implementation's own primary reference manual, rather than on
+secondary sources or assumption; see References for the full list of
+manuals consulted, and which claims rest on secondary sources instead
+where a primary manual could not be obtained.
 
 Editorial and drafting assistance for this edition was provided by
 Claude (Anthropic).
