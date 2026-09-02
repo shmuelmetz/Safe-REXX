@@ -302,8 +302,6 @@ say 'C1'X                  /* EBCDIC platforms (CMS, TSO/E, System
                                REXX): displays "A", not "C1unknown" */
 ```
 
-**ooRexx note**: abutment semantics are unchanged in ooRexx.
-
 <a id="continuation"></a>
 ### Continuation
 
@@ -385,8 +383,6 @@ operating systems and in the Unix subsystems of MVS and VM.
 Note that although in some cases REXX will recognize a syntax error
 when you omit a required explicit continuation character, in other
 cases you will get incorrect results with no error message.
-
-**ooRexx note**: continuation semantics are unchanged in ooRexx.
 
 <a id="keywords"></a>
 ### Keywords
