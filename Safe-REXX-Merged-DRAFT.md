@@ -954,7 +954,8 @@ documented for that context are listed; a blank cell means none:
 
 | Invocation context | Default environment | Other environments |
 |---|---|---|
-| OS/2 or Windows command prompt (classic REXX, OREXX, ooRexx) | `CMD` | `SYSTEM`, `PATH` on ooRexx |
+| OS/2 command prompt (classic REXX, OREXX) | `CMD` | |
+| Command prompt, Windows or OS/2 (ooRexx) | `CMD` | `SYSTEM`, `PATH` |
 | Regina, from a command prompt | `SYSTEM` | `COMMAND`, `REXX` |
 | TSO/E READY prompt | `TSO` | `MVS`, `LINK`, `ATTACH` |
 | ISPF (a dialog/panel exec, not editing), on z/OS | `TSO` | `MVS`, `LINK`, `ATTACH`, `ISPEXEC` |
