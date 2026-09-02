@@ -23,6 +23,23 @@ finished paper. What's done:
   - PARSE VERSION's actual ooRexx output string verified empirically
     against a real ooRexx 5.2.0 install before writing about it
     (see the note under "PARSE SOURCE and VERSION").
+  - A second review pass caught and fixed several real errors from
+    the first draft: OREXX was wrongly grouped with classic-Rexx
+    dialects (it's an object-Rexx-family member, older and more
+    limited than ooRexx, not classic Rexx at all); the Keywords
+    section's classic-Rexx word list was too narrow (expanded using
+    rexx-lint's own verified `keyword-as-variable` list, plus the
+    three special variables RC/RESULT/SIGL); the ooRexx directive-
+    keyword note overclaimed that `CLASS`/`METHOD`/etc. need avoiding
+    as plain variable names — they're only reserved immediately after
+    `::`, a style courtesy at most, not a parsing pitfall like the
+    classic-Rexx words; `CALL ON` was wrongly framed as an "ooRexx
+    note" when it's standard ANSI X3.274-1996 Rexx, implemented by
+    Regina too (a myth this file itself once repeated, per
+    AI-Priming/Rexx/RULES.md's own correction history); and the
+    Continuation section's "continues if it would be syntactically
+    invalid" framing was an oversimplification, corrected to name the
+    actual triggering constructs.
 
 What's NOT done yet (per the README's stated scope: "classic Rexx,
 ooRexx, TSO/E, ISPF, OMVS, System REXX, CMS, OS/2, Linux, Windows,
@@ -103,7 +120,7 @@ $REXX/, "Safe REXX/"), not just the two obvious 2023 HTML files:
     obsolete framing swapped for the still-current one.
 -->
 
-# Safe REXX: Pitfalls for Classic Rexx and ooRexx, or Will They Still Respect My Code in the Morning?
+# Safe REXX in the Enterprise and on the Desktop, or Will They Still Respect My Code in the Morning?
 
 by Shmuel (Seymour J.) Metz
 
@@ -223,7 +240,11 @@ avoiding programming errors.
 
 Sections marked **ooRexx note** cover behavior specific to Open
 Object Rexx that does not apply to classic Rexx dialects (TSO/E REXX,
-CMS REXX, System REXX, OREXX, Regina, and the like).
+CMS REXX, System REXX, Regina, and the like). Note that OREXX (IBM's
+original Object REXX for OS/2, the precursor ooRexx implements and
+succeeds as an open-source project) is itself an object-Rexx family
+member, not a classic-Rexx dialect — but an older, more limited one:
+see the specific `~translate` vs `~upper` gap noted below.
 
 ---
 
@@ -286,10 +307,20 @@ say 'C1'X                  /* EBCDIC platforms (CMS, TSO/E, System
 <a id="continuation"></a>
 ### Continuation
 
-REXX allows implicit continuation; a statement is treated as
-continued if it would otherwise be syntactically invalid. You
-indicate explicit continuation with a trailing comma. This presents
-two common pitfalls for the unwary.
+REXX's continuation rules are more nuanced than "an incomplete line
+continues." Implicit continuation happens at specific trailing
+constructs — a comma awaiting the next argument, a binary operator
+awaiting its right operand, an unclosed parenthesis or bracket — not
+merely because a line "looks incomplete" in some general sense. A
+line that ends in the middle of an unterminated quoted string is a
+different failure altogether (a lexical error), not a continuation
+case at all: REXX has no line-continuation mechanism for a string
+literal split across lines. Explicit continuation is requested with a
+trailing comma, which is itself context-sensitive — see the argument-
+separator pitfall just below, where a comma already meaningful in its
+own right (an argument separator) has to be followed by a *second*,
+purely continuation-marking comma. This presents two common pitfalls
+for the unwary.
 
 If you break a procedure invocation after a comma, the trailing comma
 will be treated as an explicit continuation request rather than as an
@@ -368,13 +399,44 @@ literal strings. Even if you are careful to write code that does what
 you want, use of those names will confuse whoever has to modify your
 code, possibly including yourself.
 
-In particular, do not use the following names as simple variables:
+The words that most often cause real *parsing* trouble — because they
+double as `PARSE` subkeywords, so the parser genuinely reads them
+differently depending on position — are:
 
 ```
 ARG             PULL            VAR
 EXTERNAL        SOURCE          VERSION
 NUMERIC         VALUE           WITH
 ```
+
+Figures 5 through 7 below show exactly how `VALUE`, `VAR`, and `WITH`
+can misparse. Beyond that narrower set, avoid the *fuller* list of
+REXX instruction keywords, keyword clauses, and common subkeywords as
+plain variable names too — legal in every case, and the parser
+resolves each occurrence correctly by position, but it is a real
+readability hazard for a human reader, not just the parser:
+
+```
+ADDRESS   ARG        CALL       DO         DROP      ELSE
+END       EXIT       EXPOSE     IF         INTERPRET ITERATE
+LEAVE     LOOP       NOP        NUMERIC    OPTIONS   OTHERWISE
+PARSE     PROCEDURE  PULL       PUSH       QUEUE     RETURN
+SAY       SELECT     SIGNAL     THEN       TRACE     UPPER
+WHEN      BY         FOR        FOREVER    TO        WHILE
+UNTIL     WITH       ON         OFF        VALUE     CONDITION
+DIGITS    FORM       FUZZ
+```
+
+Also avoid REXX's three special variables — `RC`, `RESULT`, `SIGL` —
+as names for your own ordinary variables, for the same reason:
+they already carry a specific meaning the language sets on your
+behalf (`RC` from host commands, `RESULT` from `CALL`/function
+invocations, `SIGL` the line number of the most recent `SIGNAL` or
+`CALL`), and naming your own variable the same thing invites exactly
+the kind of silent confusion this section is about. See
+[Variable references](#variable-references) below for the `RC`-vs-`RESULT`
+distinction in more detail, and the ooRexx-specific `RESULT` trap
+under [Uninitialized variables](#uninitialized-variables).
 
 #### Figure 4: Misinterpreted keyword
 
@@ -418,14 +480,20 @@ parse value stg with x +1 y +1 z
 parse var stg x +1 y +1 z
 ```
 
-**ooRexx note**: ooRexx adds a substantial number of its own reserved
-directive and body keywords on top of classic Rexx's list —
-`CLASS`, `METHOD`, `ROUTINE`, `REQUIRES`, `ATTRIBUTE`, `CONSTANT`,
-`OPTIONS`, `RESOURCE`, `PACKAGE` (directives), and `EXPOSE`, `GUARD`,
-`USE`, `FORWARD`, `SELF`, `SUPER` (body keywords used inside
-`::METHOD`/`::ROUTINE` bodies). The same rule applies: avoid these as
-plain variable names in ooRexx code, on top of the classic-Rexx list
-above.
+**ooRexx note**: ooRexx's `::CLASS`, `::METHOD`, `::ROUTINE`,
+`::REQUIRES`, `::ATTRIBUTE`, `::CONSTANT`, `::OPTIONS`, `::RESOURCE`,
+and `::PACKAGE` directives introduce keywords that are reserved
+*only* immediately after `::` — `::foo` being a directive keyword
+does not make bare `foo` one. `class = 5` elsewhere in the same file
+parses perfectly and unambiguously as an ordinary variable assignment;
+it is not a parsing pitfall the way the classic-Rexx words above are.
+It is still worth avoiding in a file that also defines real classes
+with `::CLASS`, purely as a courtesy to the human reader — which is
+why rexx-lint's own `keyword-as-variable` check flags it as a style
+warning, not an error. Body keywords that genuinely do appear as bare
+words inside `::METHOD`/`::ROUTINE` bodies — `EXPOSE`, `GUARD`,
+`FORWARD`, `USE` — belong on the avoid-as-variable-name list in the
+same way the classic-Rexx keywords above do.
 
 <a id="labels-and-signal"></a>
 ### Labels and SIGNAL
@@ -452,13 +520,25 @@ do forever
                                         terminated the DO */
 ```
 
-**ooRexx note**: `SIGNAL ON <condition>` and `CALL ON <condition>`
-both arm condition traps, but they are not interchangeable: `SIGNAL
+`SIGNAL ON <condition>` and `CALL ON <condition>` both arm condition
+traps, but they are not interchangeable, and this is standard ANSI
+Rexx (X3.274-1996) behavior, not an ooRexx extension — `CALL ON` is
+implemented by Regina too, and any claim that it's ooRexx-only is a
+myth worth retiring. The two forms differ in resumability: `SIGNAL
 ON` behaves like the unconditional `SIGNAL` above and flushes the
-call stack when it fires, while `CALL ON` preserves the call stack
-and returns control to the point right after the guarded
-instruction. If a guarded host command or block should be able to
-resume afterward, use `CALL ON`, not `SIGNAL ON`.
+call stack when it fires, with no return to the point of the
+condition. `CALL ON` calls the trap routine as a subroutine and
+*returns* to the point right after the guarded instruction once the
+trap routine finishes. If a guarded host command or block should be
+able to resume afterward, use `CALL ON`, not `SIGNAL ON`.
+
+ANSI supports both forms for `ERROR`, `FAILURE`, `HALT`, and
+`NOTREADY`; `SYNTAX` and `NOVALUE` are `SIGNAL ON`-only conditions —
+there is no `CALL ON SYNTAX` or `CALL ON NOVALUE` in the standard. Not
+every platform implements every condition identically: TSO/E REXX
+does not support `NOTREADY` at all, for instance. Check your target
+dialect's own reference before assuming a given condition/form
+combination is portable.
 
 <a id="parsing"></a>
 ### Parsing
