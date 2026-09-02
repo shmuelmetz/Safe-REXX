@@ -59,11 +59,9 @@ permission is prohibited.
 
 ---
 
-<a id="introduction"></a>
-## Introduction
+## <a id="introduction"></a>Introduction
 
-<a id="what-is-rexx"></a>
-### What is REXX?
+### <a id="what-is-rexx"></a>What is REXX?
 
 REXX is a language that was originally designed to replace the EXEC
 and EXEC2 command-macro languages in the CMS component of IBM's
@@ -78,8 +76,7 @@ message-send syntax on top. Everything in this edition that applies
 to classic Rexx applies unchanged to ooRexx unless a specific note
 says otherwise.
 
-<a id="platforms-and-standards"></a>
-### Platforms and standards conformance
+### <a id="platforms-and-standards"></a>Platforms and standards conformance
 
 The American National Standards Institute published a Rexx standard,
 ANSI X3.274-1996, adding a number of enhancements beyond Cowlishaw's
@@ -155,14 +152,12 @@ see the specific `~translate` vs `~upper` gap noted below.
 
 ---
 
-<a id="specific-examples"></a>
-## Specific examples and recommended avoidance tactics
+## <a id="specific-examples"></a>Specific examples and recommended avoidance tactics
 
 Although REXX has a number of features that lend themselves to fast
 prototyping, it has a few pitfalls that can beset the unwary.
 
-<a id="abutment"></a>
-### Abutment
+### <a id="abutment"></a>Abutment
 
 Although REXX has a conventional concatenation operator (`||`), it
 also supports two other concatenation operators: abutment with white
@@ -209,8 +204,7 @@ say 'C1'X                  /* EBCDIC platforms (CMS, TSO/E, System
                                REXX): displays "A", not "C1unknown" */
 ```
 
-<a id="continuation"></a>
-### Continuation
+### <a id="continuation"></a>Continuation
 
 REXX's continuation rules are more nuanced than "an incomplete line
 continues." Implicit continuation happens at specific trailing
@@ -291,8 +285,7 @@ Note that although in some cases REXX will recognize a syntax error
 when you omit a required explicit continuation character, in other
 cases you will get incorrect results with no error message.
 
-<a id="keywords"></a>
-### Keywords
+### <a id="keywords"></a>Keywords
 
 Avoid the use of variables with the same name as a REXX keyword. If
 you use such names you risk having statements misinterpreted or
@@ -384,12 +377,12 @@ parse var stg x +1 y +1 z
 ```
 
 **ooRexx note**: `EXPOSE`, `GUARD`, `FORWARD`, and `USE` genuinely
-appear as bare words inside `::METHOD`/`::ROUTINE` bodies and belong
-on the avoid-as-variable-name list alongside the classic-Rexx keywords
-above.
+appear as bare words inside `::METHOD`/`::ROUTINE` bodies, and `OVER`
+appears as a bare word in `DO var OVER collection` anywhere in ooRexx
+code, not just inside a directive body — all belong on the
+avoid-as-variable-name list alongside the classic-Rexx keywords above.
 
-<a id="labels-and-signal"></a>
-### Labels and SIGNAL
+### <a id="labels-and-signal"></a>Labels and SIGNAL
 
 The `SIGNAL` statement in REXX looks very much like a `GOTO` in PL/I
 and other block-structured languages, but its semantics are very
@@ -433,8 +426,7 @@ does not support `NOTREADY` at all, for instance. Check your target
 dialect's own reference before assuming a given condition/form
 combination is portable.
 
-<a id="parsing"></a>
-### Parsing
+### <a id="parsing"></a>Parsing
 
 The parsing facilities of REXX have several features that may be
 confusing to the neophyte.
@@ -475,8 +467,7 @@ parse var foo template          /* foo is a plain variable */
 parse value foo || bar with template   /* a genuine expression source */
 ```
 
-<a id="scoping-rules"></a>
-### Scoping rules
+### <a id="scoping-rules"></a>Scoping rules
 
 Although superficially REXX appears to be a block-structured
 language, it is actually a hybrid between dynamic and static scoping.
@@ -496,18 +487,22 @@ it does mean a directive body's extent is fixed by the file's
 directive structure, not purely by dynamic control flow the way an
 internal-subroutine's scope is.
 
-**Pitfall — falling through into a directive silently ends the whole
-program.** Calling an internal label whose code has no explicit
-`RETURN`, when the next thing in the file is a `::` directive rather
-than more ordinary code, does not return control to the caller the
-way falling off the end of an undirected routine would; this is easy
-to get wrong by analogy with the classic-Rexx case. It terminates
-the **entire program** cleanly instead — no error condition raised,
-nothing returned to the caller, the same as an implicit `EXIT`. Code
-after the `CALL` simply never runs, with no diagnostic pointing at
-why. This is a real risk specifically in ooRexx files that mix
-classic-style internal labels with directives, since a directive now
-sits exactly where "just more code" used to be assumed.
+**Pitfall — falling through a classic-style internal label into a
+directive silently ends the whole program.** This is specifically
+about a plain `CALL`ed label (not a `::ROUTINE` or `::METHOD` body,
+which have their own ordinary no-`RETURN`-means-return-nothing
+behavior, unaffected by any of this). When such a label's code has no
+explicit `RETURN`, running out of code to execute — whether the next
+thing in the file is a `::` directive, or nothing at all (true
+end-of-file) — does not return control to the caller the way falling
+off the end into more ordinary code would; this is easy to get wrong
+by analogy with the classic-Rexx case. Both terminate the **entire
+program** cleanly instead — no error condition raised, nothing
+returned to the caller, the same as an implicit `EXIT`. Code after
+the `CALL` simply never runs, with no diagnostic pointing at why. This
+is a real risk specifically in ooRexx files that mix classic-style
+internal labels with directives, since a directive now sits exactly
+where "just more code" used to be assumed.
 
 Do not write code intended to serve as both inline and out-of-line
 code; programs in which you both call and fall through into the same
@@ -521,17 +516,17 @@ label. See Figure 9.
 that starts with `PROCEDURE` is a hard error, not silent
 misbehavior.** `PROCEDURE` must be the first instruction actually
 *executed* immediately after its own label is reached via `CALL` (or
-a function invocation); reaching it any other
-way — straight-line fall-through from the code above it — raises
-`Error 17: Unexpected PROCEDURE.` as a `SYNTAX` condition, at the
-`PROCEDURE` line itself. This is standard Rexx behavior, not
-ooRexx-specific. It's the mechanism *behind* the "notoriously error
-prone" warning above: an unguarded fall-through into a `PROCEDURE`-led
-subprocedure doesn't just risk exposing variables unexpectedly — it
-crashes outright the moment it happens, which is at least easier to
-notice than either of the two silent failure modes above (a
-directive boundary ending the program, or plain code silently running
-with the wrong variable scope).
+a function invocation); reaching it any other way — straight-line
+fall-through from the code above it — raises `Error 17: Unexpected
+PROCEDURE.` as a `SYNTAX` condition, at the `PROCEDURE` line itself.
+This is standard Rexx behavior, not ooRexx-specific. It's the
+mechanism *behind* the "notoriously error prone" warning above: an
+unguarded fall-through into a `PROCEDURE`-led subprocedure doesn't
+just risk exposing variables unexpectedly — it crashes outright the
+moment it happens, which is at least easier to notice than either of
+the other two silent failure modes above (a directive or end-of-file
+boundary ending the program, or plain code silently running with the
+wrong variable scope).
 
 #### Figure 9: Procedure isolation
 
@@ -583,8 +578,7 @@ routine is launched as a child process, the symptom is a silent
 failure with a non-zero return code and nothing in any in-process
 trap; the real diagnostic is only in the child's captured stderr.
 
-<a id="type-and-range-checking"></a>
-### Type and range checking
+### <a id="type-and-range-checking"></a>Type and range checking
 
 Unlike most other languages, REXX has neither variable typing nor
 arrays. Arrays are often simulated using compound variables. This
@@ -619,31 +613,55 @@ end
 Prefer `do item over collection` to `do i = 1 to stem.0` when the
 data doesn't need positional indexing at all.
 
-**Indirect/computed stem access has more than one form, and getting
-the wrong one doesn't always error.** This is a real trap in classic
-Rexx as much as ooRexx, precisely because the wrong forms often look
-plausible:
+**Indirect/computed stem access has more than one form, and reaching
+for the wrong one doesn't always error.** Standard classic Rexx
+already handles the common case cleanly: a tail that is a single bare
+symbol substitutes that symbol's *current value* directly, with no
+bracket of any kind:
 
 ```rexx
-/* Indirect tail access: dot, then bracket -- standard Rexx, not an
-   ooRexx extension */
 mystem.1 = 'one'; mystem.2 = 'two'; mystem.3 = 'three'
 i = 3
-say mystem.[i]         /* CORRECT: 'three' */
+say mystem.i           /* CORRECT: 'three' -- bare-symbol substitution,
+                           classic Rexx, no bracket needed at all */
+```
+
+Two forms that look plausible by analogy are wrong, and one of them
+doesn't even error:
+
+```rexx
 say mystem.(i)         /* WRONG: Error 43 -- parsed as a call to a
                            routine literally named MYSTEM */
-say mystem[i]          /* WRONG, but raises NO error -- an unset
-                           simple variable MYSTEM evaluates to the
-                           string "MYSTEM", and [] on a bare string is
-                           ordinary character indexing: this silently
-                           returns "S" (character 3 of "MYSTEM"), not
-                           the stem element at all */
+say mystem[i]          /* WRONG, but raises NO error */
+```
 
-/* Using another compound variable directly as a tail component looks
-   like it should nest, but the tail is split on periods into
-   independent pieces BEFORE any substitution happens -- a piece is
-   never itself re-parsed as a compound-variable reference. Also
-   standard Rexx behavior, not ooRexx-specific. */
+The bracket form is where classic Rexx and ooRexx genuinely part ways
+— `[]` is an ooRexx operator (the String class's `[]` method), not a
+classic-Rexx construct at all, so a classic-Rexx program can't reach
+for it by mistake in the first place. In ooRexx code, `mystem[i]`
+silently does something else entirely: an unset simple variable
+`MYSTEM` evaluates to the string `"MYSTEM"`, and `[]` on a bare string
+is ordinary character indexing — this returns `"S"` (character 3 of
+`"MYSTEM"`), not the stem element, with no error to flag the mistake.
+
+**ooRexx note**: ooRexx extends indirect tail access with dot-then-
+bracket, `mystem.[expr]`, which accepts a genuine *expression* as the
+tail — something bare-symbol substitution above cannot do in one step:
+
+```rexx
+j = 2
+say mystem.[j + 1]     /* CORRECT: 'three' -- ooRexx-only; classic
+                           Rexx would need a temp variable first,
+                           n = j + 1; say mystem.n */
+```
+
+A third, unrelated trap: using another compound variable directly as
+a tail component looks like it should nest, but the tail is split on
+periods into independent pieces *before* any substitution happens — a
+piece is never itself re-parsed as a compound-variable reference. This
+is standard Rexx behavior in both dialects, no brackets involved:
+
+```rexx
 orphans.0 = 0
 orphans.0 = orphans.0 + 1
 orphans.orphans.0 = 'first'      /* WRONG: not "orphans.1" -- every
@@ -651,7 +669,7 @@ orphans.orphans.0 = 'first'      /* WRONG: not "orphans.1" -- every
                                      derived tail ORPHANS.ORPHANS.0 */
 ```
 
-The safe pattern in both cases: copy the index into a plain simple
+The safe pattern here too: copy the index into a plain simple
 variable first, then use that variable as the tail (`n = orphans.0;
 orphans.n = value`).
 
@@ -667,11 +685,7 @@ say mystem.3            /* still uninitialized "MYSTEM.3" -- unrelated
                             to realStem[3] even if named the same */
 ```
 
-Better still: use a real collection object and plain bracket notation
-throughout, rather than simulating one with compound variables.
-
-<a id="uninitialized-variables"></a>
-### Uninitialized variables used as constants
+### <a id="uninitialized-variables"></a>Uninitialized variables used as constants
 
 When you refer to an uninitialized variable, its value is by default
 its name in upper case. This is frequently a convenient alternative
@@ -719,8 +733,7 @@ other variable name is never affected. Pick any other name (`info`,
 `found`, `outcome`, ...) — there is no scope in which reusing `result`
 as your own variable buys anything.
 
-<a id="variable-references"></a>
-### Variable references
+### <a id="variable-references"></a>Variable references
 
 Classic Rexx does not allow passing parameters to procedures by name
 or by reference. However, you can often get similar results by
@@ -775,16 +788,14 @@ cmdRc = rc                /* CORRECT -- a host command sets rc */
 
 ---
 
-<a id="compatibility"></a>
-## Compatibility and environmental considerations
+## <a id="compatibility"></a>Compatibility and environmental considerations
 
 REXX has some specific features that you can exploit to make your
 programs more compatible across platforms, or between environments on
 the same platform. REXX also has some features that hinder
 compatibility.
 
-<a id="address"></a>
-### ADDRESS and the default environment
+### <a id="address"></a>ADDRESS and the default environment
 
 If you write a command file that issues host commands — OS/2, CMS,
 TSO, DOS commands — do not assume that the default environment is
@@ -827,8 +838,7 @@ wrapped command itself contains its own quoted arguments (a path with
 spaces, a commit message with spaces): `cmd.exe`'s quote parser does
 not reliably handle the resulting nested quoting.
 
-<a id="environmental-factors"></a>
-### Environmental factors
+### <a id="environmental-factors"></a>Environmental factors
 
 REXX does not shield you from the underlying environment; in writing
 a REXX program you must understand the behavior of your operating
@@ -857,8 +867,7 @@ platform matters:
 - The `VALUE()` built-in for reading environment variables is
   case-sensitive on Linux but case-insensitive on Windows.
 
-<a id="io-model"></a>
-### I/O model
+### <a id="io-model"></a>I/O model
 
 The I/O model in REXX is based on the file system in the CMS
 component of IBM's VM/SP. Most other systems, e.g., DOS, Linux, OS/2,
@@ -948,8 +957,7 @@ s~lineout(newContent)
 s~close()
 ```
 
-<a id="parse-source-and-version"></a>
-### PARSE SOURCE and VERSION
+### <a id="parse-source-and-version"></a>PARSE SOURCE and VERSION
 
 The `PARSE SOURCE` statement allows your code to determine the
 operating system and file from which it was invoked, as well as the
@@ -1025,8 +1033,7 @@ that begins with `REXX-ooRexx`, e.g., `when name~abbrev('REXX-ooRexx')
 then do ... end` — do not assume `name` will be one of the two classic
 values above.
 
-<a id="function-library-availability"></a>
-### Availability of optional function libraries
+### <a id="function-library-availability"></a>Availability of optional function libraries
 
 Do not assume that an optional function library your code depends on
 is actually loaded in every environment it might run in. The original
@@ -1079,8 +1086,7 @@ it's there — reach for the explicit `RxFuncQuery` branch only when a
 genuine no-RexxUtil fallback path exists, the way the original boot-disk
 scenario needed one.
 
-<a id="variable-patterns"></a>
-### Variable patterns
+### <a id="variable-patterns"></a>Variable patterns
 
 If you use variable patterns in the templates of your `PARSE`
 statements, be aware that some extremely old implementations of REXX
@@ -1090,8 +1096,7 @@ forms are supported on each and program accordingly.
 
 ---
 
-<a id="oorexx-specific-pitfalls"></a>
-## ooRexx-specific pitfalls
+## <a id="oorexx-specific-pitfalls"></a>ooRexx-specific pitfalls
 
 The pitfalls in this section have no counterpart in classic Rexx —
 they arise only from ooRexx's package/class/object model, and are
@@ -1186,8 +1191,7 @@ result = str~translate~space~strip
 
 ---
 
-<a id="debugging"></a>
-## Debugging: reach for TRACE before guessing from black-box behavior
+## <a id="debugging"></a>Debugging: reach for TRACE before guessing from black-box behavior
 
 `TRACE` is standard Rexx, not an ooRexx feature, and the advice below
 applies to any Rexx dialect. When a program's observed behavior
@@ -1206,8 +1210,7 @@ that's the signal to add `TRACE I` instead of guessing a third time.
 
 ---
 
-<a id="recapitulation"></a>
-## Recapitulation
+## <a id="recapitulation"></a>Recapitulation
 
 You can make your use of REXX more enjoyable and productive by
 following a few basic rules. Learn REXX on its own terms. Be careful
@@ -1240,8 +1243,7 @@ directly by the author.
 
 ---
 
-<a id="references"></a>
-## References
+## <a id="references"></a>References
 
 - OS/2 Procedures Language 2/REXX Reference, S10G-6268
 - OS/2 Procedures Language 2/REXX User's Guide, S10G-6269
@@ -1254,8 +1256,7 @@ directly by the author.
 - ANSI X3.274-1996, Information Technology — Programming Language REXX, American National Standards Institute
 - Classic Rexx built-in function reference (ANSI-1996/TRL-2/z/OS/z/VM comparison chart), rexxinfo.org, <https://rexxinfo.org/reference/articles/classic_rexx_functions_w_nav_menu.html>
 
-<a id="notes-and-trademarks"></a>
-## Notes and trademarks
+## <a id="notes-and-trademarks"></a>Notes and trademarks
 
 IBM, MVS/ESA, OS/390, z/OS, OS/2, VM/SP, VM/ESA, and z/VM are
 trademarks of IBM Corporation. Unix is a trademark of The Open Group.
@@ -1266,8 +1267,7 @@ source articles for this edition appeared in print in the 1990s; the
 2023 web revisions were merged and updated with ooRexx guidance in
 2026.
 
-<a id="about-the-author"></a>
-## About the author
+## <a id="about-the-author"></a>About the author
 
 Shmuel (Seymour J.) Metz (שמואל בן ל״ביש). Mr. Metz is a Senior MVS Systems Programmer
 supporting a Federal Government contract. He has worked with
@@ -1279,8 +1279,7 @@ University of New York at Buffalo.
 
 ---
 
-<a id="colophon"></a>
-## Colophon
+## <a id="colophon"></a>Colophon
 
 This merged edition was compiled in 2026 from the 2023 web revisions
 of the two source articles described under Publication History above.
