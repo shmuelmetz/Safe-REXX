@@ -954,12 +954,12 @@ documented for that context are listed; a blank cell means none:
 
 | Invocation context | Default environment | Other environments |
 |---|---|---|
-| OS/2 classic REXX and OREXX, run directly | `CMD` | |
-| ooRexx, run directly | `CMD` on Windows | `SYSTEM`, `PATH` |
-| Regina, run directly | `SYSTEM` | `COMMAND`, `REXX` |
+| OS/2 or Windows command prompt (classic REXX, OREXX, ooRexx) | `CMD` | `SYSTEM`, `PATH` on ooRexx |
+| Regina, from a command prompt | `SYSTEM` | `COMMAND`, `REXX` |
 | TSO/E READY prompt | `TSO` | `MVS`, `LINK`, `ATTACH` |
-| ISPF, on z/OS (TSO) | `TSO` | `MVS`, `LINK`, `ATTACH`, `ISPEXEC`, `ISREDIT` (edit session only) |
-| ISPF, on z/VM (CMS) | `CMS` | `ISPEXEC`, `ISREDIT` (edit session only) |
+| ISPF (a dialog/panel exec, not editing), on z/OS | `TSO` | `MVS`, `LINK`, `ATTACH`, `ISPEXEC` |
+| ISPF/PDF EDIT macro, on z/OS | `TSO` | `MVS`, `LINK`, `ATTACH`, `ISPEXEC`, `ISREDIT` |
+| ISPF (dialog or edit macro), on z/VM | `CMS` | `ISPEXEC`; `ISREDIT` in an edit macro |
 | OMVS shell (z/OS UNIX System Services) | `SH` | `TSO`, `MVS`, `SYSCALL` |
 | Batch, via `IRXJCL` (no TSO or OMVS session) | `MVS` | `LINK`, `ATTACH` |
 | System REXX (via `AXREXX` or an operator command) | `MVS` (`TSO=NO`) | `ATTACH`, `ATTCHMVS`, `ATTCHPGM`, `LINK`, `LINKMVS`, `APPCMVS`, `BCPii`, `CPICOMM`, `LU62`; `TSO=YES` adds `TSO`, `ISPEXEC`, `ISREDIT` |
@@ -967,24 +967,33 @@ documented for that context are listed; a blank cell means none:
 | GCS (a z/VM guest environment distinct from CMS) | `GCS` | `COMMAND` |
 | XEDIT macro (CMS's screen editor) | `XEDIT` | falls through to `CMS`, then `CP`, automatically |
 
+The TSO-family rows above are not the complete list of environments
+reachable from TSO — they're the ones with a primary-source-confirmed
+environment name. The underlying pattern is general: any TSO-hosted
+facility can register its own additional host command environment for
+as long as it's running, the same way ISPF adds `ISPEXEC` (and
+`ISREDIT` while editing). The native TSO `EDIT` and `TEST` facilities
+add their own (`EDIT`, `TEST`) the same way; `IPCS` does too, while
+analyzing a dump. Treat the table as illustrative of the pattern, not
+an exhaustive enumeration of every TSO-hosted facility's environment.
+
 Sourcing: the OS/2-family, ooRexx, and Regina rows rest on each
 implementation's own reference manual. TSO/E READY, ISPF-on-z/OS, and
 batch come from IBM's TSO Extensions Version 2 REXX Reference
 (SC28-1883), which documents ISPF's environment list from TSO/E's own
 side; the ISPF Dialog Developer's Guide does not independently confirm
-this list, so the ISPF-on-z/OS row reflects TSO/E's documentation of
+this list, so the ISPF-on-z/OS rows reflect TSO/E's documentation of
 ISPF, not ISPF's own. ISPF-on-z/VM is inferred by the same pattern as
 ISPF-on-z/OS (default unchanged from the underlying platform;
 `ISPEXEC`/`ISREDIT` added), since no VM-specific ISPF manual confirms
 it independently. CMS, GCS, and XEDIT come from IBM's z/VM REXX/VM
-Reference; OMVS from IBM's
-z/OS Using REXX and z/OS UNIX System Services (a manual distinct from
-the TSO/E REXX Reference). System REXX comes from IBM's System REXX
-documentation. `ISREDIT` requires an active edit session regardless of
-platform — attempting it outside one fails at run time even where the
-environment is nominally available. GCS's REXX also drops the
-`selector` third argument to `VALUE()` entirely — see
-[Variable references](#variable-references) above.
+Reference; OMVS from IBM's z/OS Using REXX and z/OS UNIX System
+Services (a manual distinct from the TSO/E REXX Reference). System
+REXX comes from IBM's System REXX documentation. `ISREDIT` requires an
+active edit session regardless of platform — attempting it outside one
+fails at run time even where the environment is nominally available.
+GCS's REXX also drops the `selector` third argument to `VALUE()`
+entirely — see [Variable references](#variable-references) above.
 
 Standard Rexx (not an ooRexx-only extension) can capture a child
 process's stdout and stderr directly into stems, with no temp files or
