@@ -635,22 +635,32 @@ say mystem.i           /* CORRECT: 'three' -- bare-symbol substitution,
 ```
 
 Two forms that look plausible by analogy are wrong, and one of them
-doesn't even error:
+doesn't even error. The first is a genuine pitfall in any Rexx
+dialect:
 
-```ooRexx
-say mystem.(i)         /* WRONG: Error 43 -- parsed as a call to a
-                           routine literally named MYSTEM */
-say mystem[i]          /* WRONG, but raises NO error */
+```rexx
+say mystem.(i)         /* WRONG in any Rexx dialect: Error 43 --
+                           parsed as a call to a routine literally
+                           named MYSTEM */
 ```
 
-The bracket form is where classic Rexx and ooRexx genuinely part ways
-— `[]` is an ooRexx operator (the String class's `[]` method), not a
-classic-Rexx construct at all, so a classic-Rexx program can't reach
-for it by mistake in the first place. In ooRexx code, `mystem[i]`
-silently does something else entirely: an unset simple variable
-`MYSTEM` evaluates to the string `"MYSTEM"`, and `[]` on a bare string
-is ordinary character indexing — this returns `"S"` (character 3 of
-`"MYSTEM"`), not the stem element, with no error to flag the mistake.
+The second, `mystem[i]`, is where classic Rexx and ooRexx genuinely
+part ways. `[]` is an ooRexx operator (the String class's `[]`
+method), not a classic-Rexx construct at all — a classic-Rexx program
+can't reach for it by mistake in the first place, since classic Rexx's
+own lexer has no defined meaning for `[`/`]`. In ooRexx, though, it
+parses and runs cleanly, silently doing something entirely different
+from what was intended:
+
+```ooRexx
+say mystem[i]           /* WRONG, and only valid at all in ooRexx --
+                            raises NO error */
+```
+
+an unset simple variable `MYSTEM` evaluates to the string `"MYSTEM"`,
+and `[]` on a bare string is ordinary character indexing — this
+returns `"S"` (character 3 of `"MYSTEM"`), not the stem element, with
+no error to flag the mistake.
 
 **ooRexx note**: ooRexx extends indirect tail access with dot-then-
 bracket, `mystem.[expr]`, which accepts a genuine *expression* as the
