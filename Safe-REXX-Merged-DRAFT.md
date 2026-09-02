@@ -516,20 +516,10 @@ parse value stg with x +1 y +1 z
 parse var stg x +1 y +1 z
 ```
 
-**ooRexx note**: ooRexx's `::CLASS`, `::METHOD`, `::ROUTINE`,
-`::REQUIRES`, `::ATTRIBUTE`, `::CONSTANT`, `::OPTIONS`, `::RESOURCE`,
-and `::PACKAGE` directives introduce keywords that are reserved
-*only* immediately after `::` — `::foo` being a directive keyword
-does not make bare `foo` one. `class = 5` elsewhere in the same file
-parses perfectly and unambiguously as an ordinary variable assignment;
-it is not a parsing pitfall the way the classic-Rexx words above are.
-It is still worth avoiding in a file that also defines real classes
-with `::CLASS`, purely as a courtesy to the human reader — which is
-why rexx-lint's own `keyword-as-variable` check flags it as a style
-warning, not an error. Body keywords that genuinely do appear as bare
-words inside `::METHOD`/`::ROUTINE` bodies — `EXPOSE`, `GUARD`,
-`FORWARD`, `USE` — belong on the avoid-as-variable-name list in the
-same way the classic-Rexx keywords above do.
+**ooRexx note**: `EXPOSE`, `GUARD`, `FORWARD`, and `USE` genuinely
+appear as bare words inside `::METHOD`/`::ROUTINE` bodies and belong
+on the avoid-as-variable-name list alongside the classic-Rexx keywords
+above.
 
 <a id="labels-and-signal"></a>
 ### Labels and SIGNAL
@@ -591,16 +581,6 @@ remember that the last variable or period (`.`) is treated
 differently from all of the others; in general its value will include
 leading **and** trailing blanks. Use the `STRIP` function or a
 trailing period to remove these if they are unwanted.
-
-**ooRexx note**: when the parse source is already a variable, prefer
-`PARSE VAR` over `PARSE VALUE ... WITH` — it is more readable, saves a
-keyword, and makes the source obvious at a glance:
-
-```rexx
-parse var foo template          /* preferred when foo is a variable */
-parse value foo || bar with template   /* PARSE VALUE reserved for
-                                           genuine expression sources */
-```
 
 **ooRexx note**: in a parse template, a variable **not** enclosed in
 parentheses is a *receiver* — it is assigned the next parsed token,
