@@ -1,139 +1,3 @@
-<!--
-DRAFT STATUS — read this before editing further.
-
-This is a first structural draft of the merged edition, not a
-finished paper. What's done:
-  - Full merge of "Safe REXX on the Desktop" (1993/1998/2023) and
-    "Safe REXX in the Enterprise" (1993/2023) — every pitfall from
-    both source papers is here; nothing from either original was
-    silently dropped (see "Merge notes" at the end of each section
-    that differed materially between the two sources).
-  - Checked ALL files in the repo, not just the two 2023 HTML
-    sources, specifically to catch anything the 2023 web revision
-    itself might have dropped along the way (see "Source-file
-    provenance" below) — this found one genuinely missing section,
-    now restored (see Figure 12 and its surrounding text).
-  - A new ooRexx-guidance callout under most sections, grounded in
-    AI-Priming/ooRexx/RULES.md's already-verified rules (not
-    invented) — each one traceable back to that file.
-  - Figures renumbered into one consistent sequence (1-12; the new
-    "ooRexx-specific pitfalls" section's code examples are
-    deliberately unnumbered, since that section is new content, not
-    part of the renumbered classic-paper sequence).
-  - PARSE VERSION's actual ooRexx output string verified empirically
-    against a real ooRexx 5.2.0 install before writing about it
-    (see the note under "PARSE SOURCE and VERSION").
-  - A second review pass caught and fixed several real errors from
-    the first draft: OREXX was wrongly grouped with classic-Rexx
-    dialects (it's an object-Rexx-family member, older and more
-    limited than ooRexx, not classic Rexx at all); the Keywords
-    section's classic-Rexx word list was too narrow (expanded using
-    rexx-lint's own verified `keyword-as-variable` list, plus the
-    three special variables RC/RESULT/SIGL); the ooRexx directive-
-    keyword note overclaimed that `CLASS`/`METHOD`/etc. need avoiding
-    as plain variable names — they're only reserved immediately after
-    `::`, a style courtesy at most, not a parsing pitfall like the
-    classic-Rexx words; `CALL ON` was wrongly framed as an "ooRexx
-    note" when it's standard ANSI X3.274-1996 Rexx, implemented by
-    Regina too (a myth this file itself once repeated, per
-    AI-Priming/Rexx/RULES.md's own correction history); and the
-    Continuation section's "continues if it would be syntactically
-    invalid" framing was an oversimplification, corrected to name the
-    actual triggering constructs.
-  - New "Platforms and standards conformance" section added, researched
-    rather than assumed: confirmed via rexxinfo.org's classic-Rexx
-    function comparison chart that z/VM CMS REXX has NOT been upgraded
-    to ANSI X3.274-1996 level -- it's listed identically alongside
-    z/OS TSO/E REXX as lacking CHANGESTR/COUNTSTR/QUALIFY, the same
-    situation, not something CMS has that TSO/E lacks or vice versa.
-    IBM's own PDF references (vm.ibm.com, publibfp.dhe.ibm.com,
-    ibm.com/docs) were not directly fetchable in this pass (TLS
-    certificate errors and 403s from this tooling, not necessarily a
-    real access restriction) -- the rexxinfo.org chart was the source
-    that actually resolved it, cross-checked against a separate
-    Google Groups thread and ooRexx's own SourceForge feature-request
-    tracker reporting the identical z/OS-side "UNRECOGNIZED FUNCTION"
-    behavior for CHANGESTR.
-
-What's NOT done yet (per the README's stated scope: "classic Rexx,
-ooRexx, TSO/E, ISPF, OMVS, System REXX, CMS, OS/2, Linux, Windows,
-ArcaOS"):
-  - No dedicated ISPF/ISPF-edit-macro guidance yet.
-  - No dedicated System REXX section yet (z/OS-console-services REXX
-    has its own I/O and environment model, distinct from TSO/E REXX —
-    not yet covered at all).
-  - ArcaOS/OREXX-specific guidance is limited to what AI-Priming
-    already had verified (the `~translate` vs `~upper` OBJREXX 6.00
-    compatibility note) — OREXX's fuller divergence from ooRexx isn't
-    mapped out yet.
-  - Windows-specific ooRexx guidance (path handling, case sensitivity
-    of `value()` for environment variables) is present but thin.
-
-Source-file provenance, checked across every file in the repo (both
-top-level and every subdirectory: NASPA/, OS2DEV/, Attached/, TSM/,
-$REXX/, "Safe REXX/"), not just the two obvious 2023 HTML files:
-  - safe_rexx_desktop.html and safe_rexx_enterprise.html (both dated
-    Jan/Feb 2023) are the correctly-labeled, already-modernized full
-    texts — confirmed by reading both in full and diffing them
-    against each other section by section.
-  - The name "SAFEREXX" is ambiguous, not a mislabeling: both papers
-    once shared that working filename before one was later
-    disambiguated to "saferexxe". NASPA/SAFEREXX.* is, despite the
-    shared name, the Enterprise paper's own archived copy (its actual
-    title text, verified by extracting readable runs from the binary
-    .DOC, is "Safe REXX in the Enterprise"); OS2DEV/SAFEREXX.* is the
-    Desktop paper (confirmed by its embedded "OS/2 Developer" journal
-    submission header). The top-level SAFEREXX.DOC and SAFEREXX.sdw
-    happen to be copies of NASPA's (Enterprise) files rather than
-    OS2DEV's (Desktop) ones, sitting next to the Desktop-sourced
-    SAFEREXX.ASC/.FIG/.THD/.W51 at the same top level — worth knowing
-    if anyone reaches for "the top-level SAFEREXX.* files" as a set
-    expecting them all to be one paper. This draft used only the
-    correctly-verified 2023 HTML versions as source text, not any of
-    the top-level files, so the ambiguity didn't affect it either way.
-  - The two 2023 HTML versions are closely related, not independently
-    authored: NASPA/SAFEREXX.DOC's own text says "A slightly different
-    version of this article was printed in the February 1995 OS/2
-    Magazine" — i.e. Enterprise is the earlier/base text and Desktop
-    is a deliberately adapted variant for a PC-focused readership,
-    confirmed independently by OS2DEV/SAFEREXX.THD, the author's own
-    1993 pitch letter to OS/2 Developer's editor, which mentions
-    intending "the same, or a similar, article" for NaSPA too.
-    Confirmed by direct diff: same section order throughout, but
-    Desktop has an entire extra pitfall (the WITH/VALUE parse-keyword
-    confusion, Figures 6-8 below) that Enterprise omits completely,
-    while Enterprise has richer dual CMS+TSO worked examples and an
-    extra paragraph on TSO/E's stream-I/O limitations that Desktop
-    omits. Both differences are preserved below, not merged away.
-  - A real, small bug was found in the current Enterprise HTML during
-    this comparison: its I/O-model paragraph says "See Figure 10" but
-    the actual next heading is "Figure 7" (a leftover, unfixed
-    reference from before that paper's figures were last renumbered).
-    Moot here since this draft renumbers everything into one sequence
-    anyway, but worth fixing in safe_rexx_enterprise.html directly if
-    that file is kept in independent circulation going forward.
-  - Real gap found by diffing the 2023 HTML against BOTH papers'
-    original 1993 plain-text submissions (OS2DEV/SAFEREXX.ASC,
-    NASPA/SAFEREXX.ASC) and an intermediate ~1997-98 web-published
-    snapshot (Attached/Vpub/safe_rexx.html, "Safe REXX/safe_rexx.html",
-    both mirrored again under TSM/ — confirmed as presentation-only
-    variants of that same snapshot, not distinct content, by direct
-    diff): both papers originally had a subsection, "REXXUTIL and
-    Emergency Boot Disks", positioned between "PARSE SOURCE and
-    VERSION" and "Variable patterns", that the final 2023 revision
-    dropped from *both* papers identically. Not an accident specific
-    to one paper or one revision pass — a deliberate-looking cut, made
-    the same way twice, of what by 2023 was genuinely obsolete advice
-    (OS/2's Presentation Manager was too large for a 1.44MB emergency
-    boot floppy, so scripts meant to run from one needed a
-    non-RexxUtil-dependent fallback path). The underlying principle —
-    don't assume an optional function library is loaded; check and
-    fall back — still generalizes today, so it's restored below in
-    modernized form (Figure 12) rather than left dropped a second
-    time, with the original figure's exact code preserved and the
-    obsolete framing swapped for the still-current one.
--->
-
 # Safe REXX in the Enterprise and on the Desktop, or Will They Still Respect My Code in the Morning?
 
 by Shmuel (Seymour J.) Metz
@@ -190,6 +54,7 @@ permission is prohibited.
 10. [References](#references)
 11. [Notes and trademarks](#notes-and-trademarks)
 12. [About the author](#about-the-author)
+13. [Colophon](#colophon)
 
 ---
 
@@ -222,11 +87,11 @@ among them the `CHANGESTR`, `COUNTSTR`, and `QUALIFY` built-in
 functions and the `LOSTDIGITS` condition. ooRexx and Regina both
 implement these ANSI-1996 enhancements. IBM's mainframe classic-Rexx
 interpreters do not: TSO/E REXX (z/OS) and CMS REXX (z/VM) are both
-explicitly documented as lacking `CHANGESTR`/`COUNTSTR`/`QUALIFY` —
-confirmed directly against rexxinfo.org's classic-Rexx function
-reference chart, which lists both mainframe interpreters identically
-as "not supported" for these, rather than treating z/VM as somehow
-upgraded past z/OS's level. Neither mainframe interpreter has been
+documented as lacking `CHANGESTR`/`COUNTSTR`/`QUALIFY` — per
+rexxinfo.org's classic-Rexx function reference chart, which lists
+both mainframe interpreters identically as "not supported" for these,
+rather than treating z/VM as somehow upgraded past z/OS's level.
+Neither mainframe interpreter has been
 brought up to ANSI-1996 level; both remain at essentially the older
 TRL-2 function set. This matters when porting code between
 mainframe and non-mainframe Rexx: code that leans on `CHANGESTR` or
@@ -634,8 +499,8 @@ internal-subroutine's scope is.
 program.** Calling an internal label whose code has no explicit
 `RETURN`, when the next thing in the file is a `::` directive rather
 than more ordinary code, does not return control to the caller the
-way falling off the end of an undirected routine would. Verified
-directly, since this is easy to get wrong by analogy: it terminates
+way falling off the end of an undirected routine would; this is easy
+to get wrong by analogy with the classic-Rexx case. It terminates
 the **entire program** cleanly instead — no error condition raised,
 nothing returned to the caller, the same as an implicit `EXIT`. Code
 after the `CALL` simply never runs, with no diagnostic pointing at
@@ -653,9 +518,9 @@ label. See Figure 9.
 
 **This is not just a style preference — falling through into a label
 that starts with `PROCEDURE` is a hard error, not silent
-misbehavior.** Verified directly: `PROCEDURE` must be the first
-instruction actually *executed* immediately after its own label is
-reached via `CALL` (or a function invocation); reaching it any other
+misbehavior.** `PROCEDURE` must be the first instruction actually
+*executed* immediately after its own label is reached via `CALL` (or
+a function invocation); reaching it any other
 way — straight-line fall-through from the code above it — raises
 `Error 17: Unexpected PROCEDURE.` as a `SYNTAX` condition, at the
 `PROCEDURE` line itself. This is standard Rexx behavior, not
@@ -845,13 +710,13 @@ result~put('', 'DIALECT')      -- Error 97.1: Object "RESULT" does not
                                    PREVIOUS line already reverted it
 ```
 
-Verified directly, in order: `putReturn = d~put('v','k')` raises
-"Message did not return a result," proving `~put` truly returns
-nothing; a single bare `result~put(...)` statement reproducibly drops
-`result` immediately afterward; an identically-shaped sequence using
-any other variable name is never affected. Pick any other name
-(`info`, `found`, `outcome`, ...) — there is no scope in which reusing
-`result` as your own variable buys anything.
+`putReturn = d~put('v','k')` raises "Message did not return a
+result," which is the proof that `~put` truly returns nothing; a
+single bare `result~put(...)` statement reproducibly drops `result`
+immediately afterward, while an identically-shaped sequence using any
+other variable name is never affected. Pick any other name (`info`,
+`found`, `outcome`, ...) — there is no scope in which reusing `result`
+as your own variable buys anything.
 
 <a id="variable-references"></a>
 ### Variable references
@@ -1138,10 +1003,9 @@ select
    end
 ```
 
-**ooRexx note — verified against a real ooRexx 5.2.0 install, not
-assumed**: the classic `REXXSAA`/`REXX370` name values above are
+**ooRexx note**: the classic `REXXSAA`/`REXX370` name values above are
 platform-specific classic-Rexx implementation names; ooRexx reports
-neither. A real check:
+neither.
 
 ```
 parse version v
@@ -1411,3 +1275,22 @@ development of two different operating systems. He has experience on
 a wide variety of languages and platforms, and has used REXX on more
 than four of them. Mr. Metz has an MA in Mathematics from the State
 University of New York at Buffalo.
+
+---
+
+<a id="colophon"></a>
+## Colophon
+
+This merged edition was compiled in 2026 from the 2023 web revisions
+of the two source articles described under Publication History above.
+Its ooRexx-specific guidance was cross-referenced against a maintained
+ooRexx-conventions reference; a small number of specific claims —
+`PARSE VERSION`'s actual ooRexx output string, the `EXIT`-versus-
+`RETURN` semantics of a called label falling through into a directive
+boundary, and the `Error 17` behavior of falling through into a
+`PROCEDURE`-led label — were checked directly against a running
+ooRexx 5.2.0 interpreter rather than assumed by analogy with classic
+Rexx.
+
+Editorial and drafting assistance for this edition was provided by
+Claude (Anthropic).
