@@ -840,9 +840,15 @@ end
 ```
 
 Valid I/O redirect types in the `WITH` clause are `NORMAL`, `STEM`,
-`STREAM`, and `USING` — `STRING` is not a valid type. To supply empty
-stdin (preventing a child process from blocking waiting for input),
-define an empty stem and pass it as `INPUT STEM`:
+`STREAM`, and `USING` — `STRING` is not a valid type. Of these, `USING`
+— supplying the input value directly, `input using (expr)`, with no
+stem or stream needed — goes beyond ANSI X3.274-1996's own `ADDRESS
+WITH` semantics, which define only `STREAM` and `STEM` as resource
+types; `NORMAL`/`STEM`/`STREAM` are standard, but `USING` is an
+extension. Verified working in ooRexx 5.2.0; not checked directly
+against OREXX or Regina. To supply empty stdin (preventing a child
+process from blocking waiting for input), define an empty stem and
+pass it as `INPUT STEM`:
 
 ```rexx
 noIn.0 = 0
@@ -1104,6 +1110,25 @@ case where you'd rather just load the package than branch on whether
 it's there — reach for the explicit `RxFuncQuery` branch only when a
 genuine no-RexxUtil fallback path exists, the way the original boot-disk
 scenario needed one.
+
+**Loading the package is not the same as every function in it being
+present.** The repertoire behind the name `RexxUtil` is not itself
+standardized, and varies by implementation: OS/2's original RexxUtil
+includes Workplace-Shell-specific functions — `SysCreateObject`,
+`SysDestroyObject`, `SysSetObjectData`, `SysQueryClassList`, and the
+like — that have no counterpart at all outside OS/2/eComStation/ArcaOS,
+since they manipulate an object-oriented desktop shell those other
+platforms don't have. Verified directly against ooRexx 5.2.0: after
+`SysLoadFuncs`, ordinary file/system functions such as `SysFileTree`,
+`SysMkDir`, and `SysTempFileName` are present, but `RxFuncQuery`
+reports every one of those four WPS-specific functions as **not**
+registered. A blanket "is RexxUtil loaded?" check, whether via Figure
+12's flag or `RxFuncQuery('SysLoadFuncs')`, only tells you the package
+itself loaded — it says nothing about whether the *specific* function
+you're about to call is part of that implementation's repertoire.
+Guard any WPS-specific (or otherwise platform-specific) call with its
+own `RxFuncQuery` on that function's own name, not just on the
+package.
 
 ### <a id="variable-patterns"></a>Variable patterns
 
