@@ -617,6 +617,20 @@ Unlike most other languages, REXX has neither variable typing nor
 arrays. Arrays are often simulated using compound variables. This
 leads to several possible types of undetected errors.
 
+**ooRexx note**: ooRexx's plain variables are exactly as untyped as
+classic Rexx's — this doesn't change what's above. Its *objects* are
+a different matter: ooRexx has dynamic typing at the object level.
+Every object knows its own class, and sending it a message that class
+doesn't define is a real, enforced error — the `Error 97.1`/"does not
+understand message" pattern seen throughout this document — not
+silent misbehavior. It's late-bound (checked when the message is
+sent, not before the program runs) rather than static, but it is
+genuine type enforcement, absent some low-level but documented
+escape hatch: a class can define an `UNKNOWN` method to deliberately
+accept and handle any message that would otherwise be rejected,
+receiving the message name and its argument list. That's an opt-in
+mechanism a class author has to write, not a gap in the checking.
+
 When you assign a value to a variable, there is no check that the
 value is consistent with the intended type. If your logic requires
 any constraints on the values that can be assigned, it is your
@@ -676,7 +690,7 @@ place. In ooRexx, both parse and run: `[]` is genuinely one uniform
 mechanism — bracket notation sends a message named `[]` to the
 receiver, with whatever's inside the brackets passed as its argument
 list — but what that list *means* is entirely up to the receiving
-class's own `[]` method, and the two below interpret it very
+object's own `[]` method, and the two below interpret it very
 differently:
 
 - On a `.String`, `[]` is character/substring extraction (ooRexx
@@ -691,12 +705,16 @@ differently:
   "element N" indexing the way `.Array`'s `[]` is.
 
 ```ooRexx
-say mystem[i]           /* WRONG, but raises NO error: 'mystem' with
-                            no trailing dot is a plain simple variable,
+say mystem[i]           /* NOT AN ERROR -- and that's the trap: this is
+                            a perfectly legitimate character selection,
+                            just not the one intended. 'mystem' with no
+                            trailing dot is a plain simple variable,
                             still dropped, so it evaluates to the
-                            string "MYSTEM"; [] on a String selects a
-                            character -- this returns "S" (character
-                            3 of "MYSTEM"), not the stem element */
+                            string "MYSTEM"; [] on a String correctly
+                            selects a character -- "S" (character 3 of
+                            "MYSTEM"). Nothing here is wrong except the
+                            programmer's expectation that this reaches
+                            the stem element instead */
 
 say mystem.[i]          /* CORRECT: 'three'. 'mystem.' -- the stem
                             itself, trailing dot, no tail -- is always
@@ -726,6 +744,33 @@ orphans.orphans.0 = 'first'      /* WRONG: not "orphans.1" -- every
 The safe pattern here too: copy the index into a plain simple
 variable first, then use that variable as the tail (`n = orphans.0;
 orphans.n = value`).
+
+**ooRexx note**: a stem's own item count sidesteps maintaining a
+manual counter tail altogether — `orphans.` is always a genuine Stem
+object (as established above), and `~items` reports how many of its
+compound variables are currently set, updating itself as a side
+effect of each assignment, with nothing for the program to track by
+hand:
+
+```ooRexx
+orphans.[orphans.~items] = 'first'   -- items was 0; sets tail "0"
+orphans.[orphans.~items] = 'second'  -- items is now 1; sets tail "1"
+orphans.[orphans.~items] = 'third'   -- items is now 2; sets tail "2"
+```
+
+Note the numbering: this starts at tail `"0"`, not `"1"` — `~items`
+counts from zero, unlike the classic convention where tail `0` is
+reserved for a manually-maintained counter and data starts at `1`.
+The two schemes are not interchangeable; pick one and stay consistent
+within a given stem. `~allIndexes` returns every tail actually
+populated, in no particular order — useful for iterating a stem built
+this way without assuming a contiguous numeric range:
+
+```ooRexx
+do tail over orphans.~allIndexes
+    say tail':' orphans.[tail]
+end
+```
 
 **ooRexx note**: `.stem~new` creates a fresh, otherwise-anonymous Stem
 object, and it is a **genuinely different object** from the Stem
