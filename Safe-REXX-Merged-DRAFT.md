@@ -14,7 +14,7 @@ one text, adds explicit ooRexx guidance throughout (both papers
 predate ooRexx and explicitly disclaimed direct experience with
 Object REXX), and extends the scope to the fuller range of platforms
 and dialects in current use: TSO/E, ISPF, OMVS, System REXX, CMS,
-e.g., Classic REXX, Object Rexx, ooRexx, Regina.
+e.g., Classic REXX, Object REXX, ooRexx, Regina.
 
 Copyright 1993, 1998, 2023, 2026 by Shmuel (Seymour J.) Metz
 (שמואל בן ל״ביש). All rights
@@ -716,7 +716,7 @@ choose to not exploit this default behavior, place a `SIGNAL ON
 NOVALUE` at the beginning of your program to detect any reference to a
 symbol that's still dropped when your logic expected a real variable.
 
-**ooRexx note — never name your own variable `result`.** This is the
+**ooRexx note**: never name your own variable `result`. This is the
 same "a dropped symbol reverts to its own name" behavior above, but
 with a genuinely surprising trigger in ooRexx: `result` isn't only set
 by `CALL`. *Any* bare message-send statement — a whole clause, its

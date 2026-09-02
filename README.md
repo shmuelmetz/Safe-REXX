@@ -4,7 +4,7 @@ Merged and updated edition of *Safe REXX on the Desktop* (1993/1995)
 and *Safe REXX in the Enterprise* (1993/2023) by Shmuel (Seymour J.) Metz.
 
 Scope: platforms and dialects in current use: TSO/E, ISPF, OMVS,
-System REXX, CMS, e.g., Classic REXX, Object Rexx, ooRexx, Regina.
+System REXX, CMS, e.g., Classic REXX, Object REXX, ooRexx, Regina.
 
 ## Status
 
