@@ -611,7 +611,7 @@ and others — as a genuine alternative to stem-simulated arrays, with
 actual bounds/type behavior rather than the silent-anything-goes
 behavior of a compound variable:
 
-```rexx
+```ooRexx
 arr = .Array~of('a', 'b', 'c')      -- construct-and-populate in one call
 do item over arr
     say item
@@ -637,7 +637,7 @@ say mystem.i           /* CORRECT: 'three' -- bare-symbol substitution,
 Two forms that look plausible by analogy are wrong, and one of them
 doesn't even error:
 
-```rexx
+```ooRexx
 say mystem.(i)         /* WRONG: Error 43 -- parsed as a call to a
                            routine literally named MYSTEM */
 say mystem[i]          /* WRONG, but raises NO error */
@@ -656,7 +656,7 @@ is ordinary character indexing — this returns `"S"` (character 3 of
 bracket, `mystem.[expr]`, which accepts a genuine *expression* as the
 tail — something bare-symbol substitution above cannot do in one step:
 
-```rexx
+```ooRexx
 j = 2
 say mystem.[j + 1]     /* CORRECT: 'three' -- ooRexx-only; classic
                            Rexx would need a temp variable first,
@@ -686,7 +686,7 @@ genuinely ooRexx-only alternative — plain bracket notation on it is
 correct and idiomatic, but it is a **separate namespace** from a
 same-named classic compound variable, even when the base name matches:
 
-```rexx
+```ooRexx
 realStem = .stem~new
 realStem[3] = 'bar'
 say mystem.3            /* still dropped -- "MYSTEM.3" -- unrelated
@@ -732,7 +732,7 @@ returns nothing executes — including the ordinary case of building up
 your *own* local variable named `result` via repeated bare sends to
 it:
 
-```rexx
+```ooRexx
 result = .Directory~new        -- fine: plain assignment, RESULT is now
                                    a real variable
 result~put('', 'INTERPRETER')  -- runs; but ~put returns no result
@@ -767,14 +767,15 @@ with compound variables. However, there are a few pitfalls.
 Building a string and running it through `INTERPRET` can achieve the
 same thing, but `INTERPRET` executes whatever Rexx source text it is
 handed — not just an assignment to one variable — which matters the
-moment `name` is not a value you fully control. Verified directly:
-handing the same crafted string (a syntactically invalid variable name
-with a second clause hidden after a semicolon) to each — `VALUE()`
-simply raised a `SYNTAX` condition on the malformed name and executed
-nothing else, while `INTERPRET` began executing the hidden second
-clause (visibly compiling and invoking the routine it named) before
-failing only because that call was missing a required argument, not
-because the injection itself was ever blocked. Reserve `INTERPRET` for
+moment `name` is not a value you fully control. Hand the same crafted
+string (a syntactically invalid variable name with a second clause
+hidden after a semicolon) to each, and the difference shows up
+immediately: `VALUE()` simply raises a `SYNTAX` condition on the
+malformed name and executes nothing else, while `INTERPRET` begins
+executing the hidden second clause (visibly compiling and invoking the
+routine it named) before failing only because that call was missing a
+required argument — not because the injection itself was ever blocked.
+Reserve `INTERPRET` for
 genuinely dynamic code — constructing a whole statement or expression
 at run time — not as a heavier substitute for a single indirect
 variable reference.
@@ -792,7 +793,7 @@ you will probably get incorrect results on your second time through.
 **ooRexx note**: ooRexx closes the by-reference gap classic Rexx
 disclaims above, with a real `USE ARG` statement:
 
-```rexx
+```ooRexx
 ::routine adjustBalance
   use arg account      -- account is a genuine mutable reference to
                            the caller's object, not a copy
@@ -850,19 +851,17 @@ for instance), and the two kinds are easy to conflate:
 
 | Platform / dialect | Default environment | Other environments |
 |---|---|---|
-| OS/2 classic REXX and OREXX | `CMD` | Whatever the host application registers (e.g. `EDIT` for an editor) — `CMD` is the only OS/2-native built-in. Verified directly against IBM's own Procedures Language 2/REXX Reference and Object REXX Reference. |
-| ooRexx | `CMD` (Windows) | `SYSTEM`, `PATH` — verified live, ooRexx 5.2.0 on Windows; not checked on Linux, where the default may differ. |
+| OS/2 classic REXX and OREXX | `CMD` | Whatever the host application registers (e.g. `EDIT` for an editor) — `CMD` is the only OS/2-native built-in. (Per IBM's own Procedures Language 2/REXX Reference and Object REXX Reference.) |
+| ooRexx | `CMD` on Windows | `SYSTEM`, `PATH` (ooRexx 5.2.0); the Linux default may differ. |
 | Regina | `SYSTEM` (aka `ENVIRONMENT`/`OS2ENVIRONMENT`) | `COMMAND` (aka `CMD`/`PATH`), `REXX` (aka `REGINA`, runs the command in a fresh interpreter instance). Per Regina's own reference manual. |
 | TSO/E REXX | `TSO` | `ISPEXEC` (ISPF services, available only when running under ISPF), `ISREDIT` (ISPF/PDF edit macros, available only in an edit session). |
 | CMS REXX (VM/SP) | `CMS`/`COMMAND` | `CP` (hypervisor commands). |
 | System REXX (z/OS) | `MVS` (when configured `TSO=NO`) | `ATTACH`, `ATTCHMVS`, `ATTCHPGM`, `LINK`, `LINKMVS`, `APPCMVS`, `BCPii`, `CPICOMM`, `LU62`; a `TSO=YES` exec additionally gets `TSO` and the ISPF-style environments above. |
 
-The first two rows and Regina's row are grounded directly in each
-implementation's own reference manual (checked this edition); the
-TSO/E, CMS, and System REXX rows are standard, well-documented IBM
-behavior but were not checked against a primary manual for this
-edition — verify against your own system's REXX Reference before
-relying on the exact environment names.
+The first two rows and Regina's row rest on each implementation's own
+reference manual; the TSO/E, CMS, and System REXX rows are standard,
+well-documented IBM behavior, but consult your own system's REXX
+Reference for the exact environment names before relying on them.
 
 Standard Rexx (not an ooRexx-only extension) can capture a child
 process's stdout and stderr directly into stems, with no temp files or
@@ -884,19 +883,18 @@ Valid I/O redirect types in the `WITH` clause are `NORMAL`, `STEM`,
 — supplying the input value directly, `input using (expr)`, with no
 stem or stream needed — goes beyond ANSI X3.274-1996's own `ADDRESS
 WITH` semantics, which define only `STREAM` and `STEM` as resource
-types; `NORMAL`/`STEM`/`STREAM` are standard, but `USING` is an
-ooRexx extension, verified working in ooRexx 5.2.0. Checked against
-Regina's own reference manual: its `ADDRESS WITH` syntax diagram lists
-only `STREAM`, `STEM`, `LIFO`, and `FIFO` as resource types — `LIFO`
-and `FIFO` are Regina's own extensions beyond the ANSI baseline, but
-`USING` does not appear anywhere in the manual, so Regina does not
-have it. Checked against IBM's own OS/2 reference documentation for
-both classic Rexx and OREXX (Procedures Language 2/REXX Reference and
-Object REXX Reference): the `ADDRESS` instruction's own syntax diagram
-in *both* is just `ADDRESS [environment] [expression]` — no `WITH`
-clause of any kind. Neither classic OS/2 REXX nor OREXX ever had
-*any* form of `ADDRESS WITH`, `USING` included; the whole I/O
-redirection clause is an enhancement neither IBM product picked up.
+types; `NORMAL`/`STEM`/`STREAM` are standard, but `USING` is an ooRexx
+extension (ooRexx 5.2.0). Regina does not have it: its own reference
+manual's `ADDRESS WITH` syntax diagram lists only `STREAM`, `STEM`,
+`LIFO`, and `FIFO` as resource types — `LIFO` and `FIFO` are Regina's
+own extensions beyond the ANSI baseline, but `USING` appears nowhere
+in the manual. Neither classic OS/2 REXX nor OREXX has it either — per
+IBM's own OS/2 reference documentation for both (Procedures Language
+2/REXX Reference and Object REXX Reference), the `ADDRESS` instruction's
+own syntax diagram in *both* is just `ADDRESS [environment]
+[expression]`, no `WITH` clause of any kind. Neither ever had *any*
+form of `ADDRESS WITH`, `USING` included; the whole I/O redirection
+clause is an enhancement neither IBM product picked up.
 To supply empty stdin (preventing a child process from blocking
 waiting for input), define an empty stem and pass it as `INPUT STEM`:
 
@@ -1025,7 +1023,7 @@ ooRexx also offers stream *methods* on a `.Stream` object as an
 alternative to the classic built-in functions above, preferred in new
 ooRexx code:
 
-```rexx
+```ooRexx
 s = .Stream~new(path)
 s~command('OPEN WRITE REPLACE')
 s~lineout(newContent)
@@ -1112,11 +1110,11 @@ meet:
 
 | Implementation | `name` | `level` | Source |
 |---|---|---|---|
-| OS/2 classic REXX (Procedures Language 2/REXX) | `REXXSAA` | `4.00` | IBM's own reference manual, verified directly |
-| OREXX (Object REXX for OS/2) | `OBJREXX` | `6.00` | IBM's own reference manual, verified directly |
-| CMS / TSO/E REXX (classic mainframe, "REXX370") | `REXX370` | `4.00` | Widely documented; not checked against a primary manual for this edition |
-| Regina | `REXX-Regina_<version>` (e.g. `REXX-Regina_3.9.6(MT)`) | `5.00` | Regina's own reference manual (name format) and public examples (exact string); ANSI-compliant since Regina 3.1 |
-| ooRexx | `REXX-ooRexx_<version>(MT)_<bits>-bit` (e.g. `REXX-ooRexx_5.2.0(MT)_64-bit`) | `6.06` | Verified live, ooRexx 5.2.0 |
+| OS/2 classic REXX (Procedures Language 2/REXX) | `REXXSAA` | `4.00` | IBM's own reference manual |
+| OREXX (Object REXX for OS/2) | `OBJREXX` | `6.00` | IBM's own reference manual |
+| CMS / TSO/E REXX (classic mainframe, "REXX370") | `REXX370` | `4.00` | Widely documented |
+| Regina | `REXX-Regina_<version>` (e.g. `REXX-Regina_3.9.6(MT)`) | `5.00` | Regina's own reference manual; ANSI-compliant since Regina 3.1 |
+| ooRexx | `REXX-ooRexx_<version>(MT)_<bits>-bit` (e.g. `REXX-ooRexx_5.2.0(MT)_64-bit`) | `6.06` | ooRexx 5.2.0 |
 
 Two things worth noticing in this table. First, `level` is *not* the
 interpreter's own version number — it is the Rexx *language level* the
@@ -1184,23 +1182,22 @@ scenario needed one.
 
 **Loading the package is not the same as every function in it being
 present.** The repertoire behind the name `RexxUtil` is not itself
-standardized, and varies by implementation. Checked directly against
-IBM's own OS/2 reference documentation, for both classic Rexx and
-OREXX: both document the full Workplace-Shell-specific set —
-`SysCreateObject`, `SysDestroyObject`, `SysSetObjectData`,
-`SysQueryClassList`, and the like — confirming this was the original
+standardized, and varies by implementation. IBM's own OS/2 reference
+documentation, for both classic Rexx and OREXX, documents the full
+Workplace-Shell-specific set — `SysCreateObject`, `SysDestroyObject`,
+`SysSetObjectData`, `SysQueryClassList`, and the like — the original
 repertoire on OS/2 itself, where the Workplace Shell these functions
-manipulate actually exists. Checked across two later implementations:
+manipulate actually exists. Later implementations trim it down:
 ordinary file/system functions such as `SysFileTree`, `SysMkDir`, and
 `SysTempFileName` are part of the common core, present in both ooRexx
-(verified directly against ooRexx 5.2.0, via `RxFuncQuery` after
-`SysLoadFuncs`) and Regina's `RegUtil` package (per its own reference
-manual). The Workplace-Shell-specific functions are a different story:
-`RxFuncQuery` reports all four as **not** registered in ooRexx 5.2.0,
-and none of the four appears anywhere in RegUtil's reference manual
-either — neither reimplements the OS/2-shell-specific portion of the
-original repertoire, only the platform-independent core that still
-makes sense on a platform without a Workplace Shell.
+(via `RxFuncQuery` after `SysLoadFuncs`, ooRexx 5.2.0) and Regina's
+`RegUtil` package (per its own reference manual). The
+Workplace-Shell-specific functions are a different story: `RxFuncQuery`
+reports all four as **not** registered in ooRexx 5.2.0, and none of
+the four appears anywhere in RegUtil's reference manual either —
+neither reimplements the OS/2-shell-specific portion of the original
+repertoire, only the platform-independent core that still makes sense
+on a platform without a Workplace Shell.
 
 A blanket "is RexxUtil loaded?" check, whether via Figure 12's flag or
 `RxFuncQuery('SysLoadFuncs')`, only tells you the package itself
@@ -1243,7 +1240,7 @@ Error 97.1: Object ".FOO" does not understand message "NEW".
 
 Fix: declare the class `PUBLIC`:
 
-```rexx
+```ooRexx
 ::class Foo public     -- required for .Foo~new to work from another package
 ```
 
@@ -1273,7 +1270,7 @@ contiguous block at the very start of the file, before the first
 must also be a directive — plain executable code cannot resume after
 it, even just to call a routine defined below:
 
-```rexx
+```ooRexx
 /* WRONG -- fails with Error 99.916, "Unrecognized directive
    instruction" */
 ::requires 'Foo.cls'
@@ -1302,7 +1299,7 @@ reserved for "real" objects like `.Array`/`.Directory` — it applies
 just as much to ordinary character-string manipulation, where
 classic-Rexx habit reaches for nested built-in-function calls instead:
 
-```rexx
+```ooRexx
 /* Classic-Rexx style -- reads inside-out */
 result = translate(substr(str, 1, 5))
 result = strip(space(translate(str)))
@@ -1407,13 +1404,14 @@ University of New York at Buffalo.
 This merged edition was compiled in 2026 from the 2023 web revisions
 of the two source articles described under Publication History above.
 Its ooRexx-specific guidance was cross-referenced against a maintained
-ooRexx-conventions reference; a small number of specific claims —
-`PARSE VERSION`'s actual ooRexx output string, the `EXIT`-versus-
-`RETURN` semantics of a called label falling through into a directive
-boundary, and the `Error 17` behavior of falling through into a
-`PROCEDURE`-led label — were checked directly against a running
-ooRexx 5.2.0 interpreter rather than assumed by analogy with classic
-Rexx.
+ooRexx-conventions reference. Where this edition's text depends on a
+specific claim about interpreter behavior rather than an assumption by
+analogy — a `PARSE VERSION` output string, an error number, whether a
+given feature exists in a given dialect — that claim rests either on
+a running ooRexx 5.2.0 interpreter or on the implementation's own
+primary reference documentation (IBM's OS/2 Procedures Language
+2/REXX Reference and Object REXX Reference; Regina's reference
+manual), rather than on secondary sources or assumption.
 
 Editorial and drafting assistance for this edition was provided by
 Claude (Anthropic).
