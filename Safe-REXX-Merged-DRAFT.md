@@ -903,40 +903,43 @@ for use from within other environments too, e.g., the ISPF/PDF editor
 on a mainframe, or an editor that uses REXX as its macro language on
 a PC.
 
-The default environment, and what else is available, varies by
-platform and dialect — an environment beyond the default is either a
-small fixed set the interpreter itself provides, or something a host
-application registers at run time (an editor's macro environment,
-for instance), and the two kinds are easy to conflate:
-
 A platform name alone is too coarse here — the *invocation context*,
-not just the OS, decides the default:
+not just the OS, decides the default. Only environments actually
+documented for that context are listed; a blank cell means none:
 
 | Invocation context | Default environment | Other environments |
 |---|---|---|
-| OS/2 classic REXX and OREXX, run directly | `CMD` | Whatever the host application registers (e.g. `EDIT` for an editor) — `CMD` is the only OS/2-native built-in. |
-| ooRexx, run directly | `CMD` on Windows | `SYSTEM`, `PATH` (ooRexx 5.2.0); the Linux default may differ. |
-| Regina, run directly | `SYSTEM` (aka `ENVIRONMENT`/`OS2ENVIRONMENT`) | `COMMAND` (aka `CMD`/`PATH`), `REXX` (aka `REGINA`, runs the command in a fresh interpreter instance). |
-| TSO READY prompt | `TSO` | Whatever a running application has registered. |
-| ISPF (an exec invoked as an ISPF command or from a panel, not editing) | `TSO` — unchanged from the bare TSO case | `ISPEXEC` (ISPF services: `DISPLAY`, `SELECT`, and the like). |
-| ISPF/PDF EDIT macro | `TSO` — **still TSO, not ISREDIT**, even inside an edit macro | `ISPEXEC`, `ISREDIT` (edit subcommands) — both must be addressed explicitly; neither is ever the default. |
-| OMVS shell (z/OS UNIX System Services) | `SH` | `TSO` (to reach TSO/E commands from the shell), `MVS`, `SYSCALL`. |
-| Batch, via `IRXJCL` (`EXEC PGM=IRXJCL` in JCL, with no TSO or OMVS session at all) | `MVS` | TSO/E services, commands, and most TSO/E external functions are not available at all in this environment — not just non-default, genuinely absent. |
-| System REXX (an exec started via the `AXREXX` assembler interface or an operator command — not TSO, batch, or OMVS) | `MVS` (when configured `TSO=NO`) | `ATTACH`, `ATTCHMVS`, `ATTCHPGM`, `LINK`, `LINKMVS`, `APPCMVS`, `BCPii`, `CPICOMM`, `LU62`; a `TSO=YES` exec additionally gets `TSO` and the ISPF-style environments above. |
-| CMS command line | `CMS` | `COMMAND` (skips the EXEC search CMS itself does), `CP` (hypervisor commands). |
-| GCS (Group Control System, a z/VM guest environment distinct from CMS) | `GCS` (full command resolution: exec, then GCS module, then CP command) | `COMMAND` (host/GCS commands only, narrower than the default). GCS's REXX also drops the `selector` third argument to `VALUE()` entirely — see [Variable references](#variable-references) above. |
-| XEDIT macro (CMS's screen editor) | `XEDIT` | Falls through automatically — a clause XEDIT doesn't recognize is tried against `CMS`, then `CP`, with no `ADDRESS` needed for any of the three. |
+| OS/2 classic REXX and OREXX, run directly | `CMD` | |
+| ooRexx, run directly | `CMD` on Windows | `SYSTEM`, `PATH` |
+| Regina, run directly | `SYSTEM` | `COMMAND`, `REXX` |
+| TSO/E READY prompt | `TSO` | `MVS`, `LINK`, `ATTACH` |
+| ISPF, on z/OS (TSO) | `TSO` | `MVS`, `LINK`, `ATTACH`, `ISPEXEC`, `ISREDIT` (edit session only) |
+| ISPF, on z/VM (CMS) | `CMS` | `ISPEXEC`, `ISREDIT` (edit session only) |
+| OMVS shell (z/OS UNIX System Services) | `SH` | `TSO`, `MVS`, `SYSCALL` |
+| Batch, via `IRXJCL` (no TSO or OMVS session) | `MVS` | `LINK`, `ATTACH` |
+| System REXX (via `AXREXX` or an operator command) | `MVS` (`TSO=NO`) | `ATTACH`, `ATTCHMVS`, `ATTCHPGM`, `LINK`, `LINKMVS`, `APPCMVS`, `BCPii`, `CPICOMM`, `LU62`; `TSO=YES` adds `TSO`, `ISPEXEC`, `ISREDIT` |
+| CMS command line | `CMS` | `COMMAND`, `CP` |
+| GCS (a z/VM guest environment distinct from CMS) | `GCS` | `COMMAND` |
+| XEDIT macro (CMS's screen editor) | `XEDIT` | falls through to `CMS`, then `CP`, automatically |
 
-The CMS, GCS, and XEDIT rows are grounded in IBM's own z/VM REXX/VM
-Reference; the OMVS row in IBM's own z/OS Using REXX and z/OS UNIX
-System Services documentation — a manual distinct from the TSO/E REXX
-Reference, since the same TSO/E REXX interpreter's Unix-shell behavior
-is documented separately from its TSO/ISPF behavior. The OS/2-family,
-ooRexx, and Regina rows rest on each implementation's own reference
-manual. The TSO READY/ISPF/ISPF-EDIT, batch, and System REXX rows are
-standard, widely-documented IBM behavior, but consult your own
-system's REXX Reference for the exact environment names before
-relying on them.
+Sourcing: the OS/2-family, ooRexx, and Regina rows rest on each
+implementation's own reference manual. TSO/E READY, ISPF-on-z/OS, and
+batch come from IBM's TSO Extensions Version 2 REXX Reference
+(SC28-1883), which documents ISPF's environment list from TSO/E's own
+side; the ISPF Dialog Developer's Guide does not independently confirm
+this list, so the ISPF-on-z/OS row reflects TSO/E's documentation of
+ISPF, not ISPF's own. ISPF-on-z/VM is inferred by the same pattern as
+ISPF-on-z/OS (default unchanged from the underlying platform;
+`ISPEXEC`/`ISREDIT` added), since no VM-specific ISPF manual confirms
+it independently. CMS, GCS, and XEDIT come from IBM's z/VM REXX/VM
+Reference; OMVS from IBM's
+z/OS Using REXX and z/OS UNIX System Services (a manual distinct from
+the TSO/E REXX Reference). System REXX comes from IBM's System REXX
+documentation. `ISREDIT` requires an active edit session regardless of
+platform — attempting it outside one fails at run time even where the
+environment is nominally available. GCS's REXX also drops the
+`selector` third argument to `VALUE()` entirely — see
+[Variable references](#variable-references) above.
 
 Standard Rexx (not an ooRexx-only extension) can capture a child
 process's stdout and stderr directly into stems, with no temp files or
@@ -1464,6 +1467,7 @@ directly by the author.
 - Object REXX Reference, IBM Corp. (OS/2 Object REXX, the OREXX precursor to ooRexx)
 - TSO Extensions Version 2 REXX Reference, SC28-1883
 - TSO Extensions Version 2 REXX User's Guide, SC28-1882
+- ISPF Dialog Developer's Guide and Reference, IBM Corp., SC34-4821 (does not independently state the REXX host command environment list for ISPF; see the TSO Extensions Version 2 REXX Reference above for that)
 - z/OS Using REXX and z/OS UNIX System Services, IBM Corp., SA23-2283 (documents TSO/E REXX's behavior in the OMVS shell separately from the TSO/E REXX Reference above)
 - z/VM REXX/VM Reference, IBM Corp., SC24-6314
 - The REXX Language: A Practical Approach to Programming, 2nd Edition. By Michael F. Cowlishaw (Prentice-Hall, Inc., a division of Simon & Schuster), Englewood Cliffs, New Jersey 07632, ISBN 0-13-780651-5
