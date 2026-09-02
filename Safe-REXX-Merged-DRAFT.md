@@ -13,8 +13,9 @@ for the web in January/February 2023. This edition merges them into
 one text, adds explicit ooRexx guidance throughout (both papers
 predate ooRexx and explicitly disclaimed direct experience with
 Object REXX), and extends the scope to the fuller range of platforms
-and dialects in current use: TSO/E, ISPF, OMVS, System REXX, CMS,
-e.g., Classic REXX, Object REXX, ooRexx, Regina.
+and dialects in current use: TSO/E REXX (the only REXX on z/OS,
+running under TSO, ISPF, the OMVS shell, batch, and System REXX), CMS,
+Classic REXX, Object REXX, ooRexx, Regina.
 
 Copyright 1993, 1998, 2023, 2026 by Shmuel (Seymour J.) Metz
 (שמואל בן ל״ביש). All rights
@@ -151,12 +152,14 @@ REXX and ooRexx, those generic principles are of equal importance in
 avoiding programming errors.
 
 Sections marked **ooRexx note** cover behavior specific to Open
-Object Rexx that does not apply to classic Rexx dialects (TSO/E REXX,
-CMS REXX, System REXX, Regina, and the like). Note that OREXX (IBM's
-original Object REXX for OS/2, the precursor ooRexx implements and
-succeeds as an open-source project) is itself an object-Rexx family
-member, not a classic-Rexx dialect — but an older, more limited one:
-see the specific `~translate` vs `~upper` gap noted below.
+Object Rexx that does not apply to classic Rexx dialects (TSO/E
+REXX — the same interpreter whether run under TSO, ISPF, the OMVS
+shell, batch, or System REXX — CMS REXX, Regina, and the like). Note
+that OREXX (IBM's original Object REXX for OS/2, the precursor ooRexx
+implements and succeeds as an open-source project) is itself an
+object-Rexx family member, not a classic-Rexx dialect — but an older,
+more limited one: see the specific `~translate` vs `~upper` gap noted
+below.
 
 ---
 
@@ -879,18 +882,22 @@ not just the OS, decides the default:
 | ISPF (an exec invoked as an ISPF command or from a panel, not editing) | `TSO` — unchanged from the bare TSO case | `ISPEXEC` (ISPF services: `DISPLAY`, `SELECT`, and the like). |
 | ISPF/PDF EDIT macro | `TSO` — **still TSO, not ISREDIT**, even inside an edit macro | `ISPEXEC`, `ISREDIT` (edit subcommands) — both must be addressed explicitly; neither is ever the default. |
 | OMVS shell (z/OS UNIX System Services) | `SH` | `TSO` (to reach TSO/E commands from the shell), `MVS`, `SYSCALL`. |
-| System REXX (z/OS, outside TSO and batch) | `MVS` (when configured `TSO=NO`) | `ATTACH`, `ATTCHMVS`, `ATTCHPGM`, `LINK`, `LINKMVS`, `APPCMVS`, `BCPii`, `CPICOMM`, `LU62`; a `TSO=YES` exec additionally gets `TSO` and the ISPF-style environments above. |
+| Batch, via `IRXJCL` (`EXEC PGM=IRXJCL` in JCL, with no TSO or OMVS session at all) | `MVS` | TSO/E services, commands, and most TSO/E external functions are not available at all in this environment — not just non-default, genuinely absent. |
+| System REXX (an exec started via the `AXREXX` assembler interface or an operator command — not TSO, batch, or OMVS) | `MVS` (when configured `TSO=NO`) | `ATTACH`, `ATTCHMVS`, `ATTCHPGM`, `LINK`, `LINKMVS`, `APPCMVS`, `BCPii`, `CPICOMM`, `LU62`; a `TSO=YES` exec additionally gets `TSO` and the ISPF-style environments above. |
 | CMS command line | `CMS` | `COMMAND` (skips the EXEC search CMS itself does), `CP` (hypervisor commands). |
 | GCS (Group Control System, a z/VM guest environment distinct from CMS) | `GCS` (full command resolution: exec, then GCS module, then CP command) | `COMMAND` (host/GCS commands only, narrower than the default). GCS's REXX also drops the `selector` third argument to `VALUE()` entirely — see [Variable references](#variable-references) above. |
 | XEDIT macro (CMS's screen editor) | `XEDIT` | Falls through automatically — a clause XEDIT doesn't recognize is tried against `CMS`, then `CP`, with no `ADDRESS` needed for any of the three. |
 
 The CMS, GCS, and XEDIT rows are grounded in IBM's own z/VM REXX/VM
-Reference; the OMVS row in IBM's z/OS UNIX System Services REXX
-documentation. The OS/2-family, ooRexx, and Regina rows rest on each
-implementation's own reference manual. The TSO READY/ISPF/ISPF-EDIT
-rows and the System REXX row are standard, widely-documented IBM
-behavior, but consult your own system's REXX Reference for the exact
-environment names before relying on them.
+Reference; the OMVS row in IBM's own z/OS Using REXX and z/OS UNIX
+System Services documentation — a manual distinct from the TSO/E REXX
+Reference, since the same TSO/E REXX interpreter's Unix-shell behavior
+is documented separately from its TSO/ISPF behavior. The OS/2-family,
+ooRexx, and Regina rows rest on each implementation's own reference
+manual. The TSO READY/ISPF/ISPF-EDIT, batch, and System REXX rows are
+standard, widely-documented IBM behavior, but consult your own
+system's REXX Reference for the exact environment names before
+relying on them.
 
 Standard Rexx (not an ooRexx-only extension) can capture a child
 process's stdout and stderr directly into stems, with no temp files or
@@ -1397,8 +1404,11 @@ directly by the author.
 - OS/2 Procedures Language 2/REXX Reference, S10G-6268
 - OS/2 Procedures Language 2/REXX User's Guide, S10G-6269
 - SAA Common Programming Interface Procedures Language Reference, SC26-4358
+- Object REXX Reference, IBM Corp. (OS/2 Object REXX, the OREXX precursor to ooRexx)
 - TSO Extensions Version 2 REXX Reference, SC28-1883
 - TSO Extensions Version 2 REXX User's Guide, SC28-1882
+- z/OS Using REXX and z/OS UNIX System Services, IBM Corp., SA23-2283 (documents TSO/E REXX's behavior in the OMVS shell separately from the TSO/E REXX Reference above)
+- z/VM REXX/VM Reference, IBM Corp., SC24-6314
 - The REXX Language: A Practical Approach to Programming, 2nd Edition. By Michael F. Cowlishaw (Prentice-Hall, Inc., a division of Simon & Schuster), Englewood Cliffs, New Jersey 07632, ISBN 0-13-780651-5
 - Open Object Rexx (ooRexx) Reference, The RexxLA/Open Object Rexx project, <https://www.oorexx.org/>
 - Josep Maria Blasco's Rexx Parser (AST/element parser for Rexx, ooRexx, and Executor, written in ooRexx itself), <https://github.com/JosepMariaBlasco/rexx-parser>, also distributed as part of RexxLA's net-oo-rexx
