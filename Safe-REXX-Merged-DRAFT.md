@@ -1281,7 +1281,7 @@ meet:
 | Implementation | `name` | `level` | Source |
 |---|---|---|---|
 | OS/2 classic REXX (Procedures Language 2/REXX) | `REXXSAA` | `4.00` | IBM's own reference manual |
-| OREXX (Object REXX for OS/2) | `OBJREXX` | `6.00` | IBM's own reference manual |
+| OREXX (IBM's Object REXX) | `OBJREXX` | `6.00` | IBM's own reference manual (OS/2 edition) |
 | CMS / TSO/E REXX (classic mainframe, "REXX370") | `REXX370` | `4.00` | Widely documented |
 | Regina | `REXX-Regina_<version>` (e.g. `REXX-Regina_3.9.6(MT)`) | `5.00` | Regina's own reference manual; ANSI-compliant since Regina 3.1 |
 | ooRexx | `REXX-ooRexx_<version>(MT)_<bits>-bit` (e.g. `REXX-ooRexx_5.2.0(MT)_64-bit`) | `6.06` | ooRexx 5.2.0 |
@@ -1538,7 +1538,7 @@ directly by the author.
 - OS/2 Procedures Language 2/REXX Reference, S10G-6268
 - OS/2 Procedures Language 2/REXX User's Guide, S10G-6269
 - SAA Common Programming Interface Procedures Language Reference, SC26-4358
-- Object REXX Reference, IBM Corp. (OS/2 Object REXX, the OREXX precursor to ooRexx)
+- Object REXX Reference, IBM Corp. (the OS/2 edition of the manual for OREXX, IBM's cross-platform Object REXX for OS/2, Windows, and AIX, and the precursor to ooRexx)
 - TSO Extensions Version 2 REXX Reference, SC28-1883 (two editions consulted: SC28-1883-0, December 1988, and SC28-1883-4, August 1991 — the host command environment table grew noticeably between them, so the later edition is the one relied on for that table)
 - TSO Extensions Version 2 REXX User's Guide, SC28-1882
 - ISPF Dialog Developer's Guide and Reference, IBM Corp., SC34-4821 (does not independently state the REXX host command environment list for ISPF; see the TSO Extensions Version 2 REXX Reference above for that)
