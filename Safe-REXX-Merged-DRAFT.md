@@ -1152,28 +1152,36 @@ the platform-specific cases above, ooRexx's `.String` class provides a
 `caselessStartsWith`/`caselessEndsWith`, `caselessWordPos`,
 `caselessContains`/`caselessContainsWord` — rather than calling
 `TRANSLATE()`/`~upper` on both sides before every comparison. `PARSE`
-itself has a `CASELESS` modifier too (alongside `UPPER`/`LOWER`) for
-case-independent template matching, standard across classic Rexx and
-ooRexx.
+itself has a `CASELESS` modifier too (alongside `LOWER`) for
+case-independent template matching — but unlike `PARSE UPPER`, which
+is genuine ANSI X3.274-1996 syntax (spelled out in full; the standard
+documents no abbreviated form for it), neither `LOWER` nor `CASELESS`
+appears anywhere in the ANSI text: both are extensions, present in
+ooRexx and Regina alike but absent from TRL-2-level classic Rexx and
+from the ANSI standard itself.
 
 ### <a id="io-model"></a>I/O model
 
-`EXECIO` is CMS's native mechanism for file I/O, working through
-stems or the program stack rather than individual `LINEIN`/`LINEOUT`
-calls. TSO/E REXX in MVS supports only a subset of `EXECIO` — the
-STEM and stack forms, not the variable-name form — and does not
-support REXX's stream I/O model at all outside the UNIX System
-Services (OMVS) subsystem, where full stream I/O (`LINEIN`,
-`LINEOUT`, `STREAM`, and `LINES`/`CHARS` returning accurate counts —
-the model ANSI Rexx standardized) is available. OS/2's classic Rexx
-has stream I/O functions too, but its `CHARS` and `LINES` return only
-0 or 1, not exact counts. See Figure 10. Code that expects an exact
-number of characters or lines from those functions may fail on TSO/E
-or OS/2, and an implementation that *did* return exact numbers there
-could be horribly inefficient. Outside TSO/E and OS/2, full stream I/O
-is the norm; some interpreters still support `EXECIO` for
-compatibility with legacy TSO/CMS code, but it is not the primary I/O
-model there.
+The original implementation of REX on CMS used the `EXECIO` command,
+later inherited by TSO/E and other platforms. The two implementations
+support different subsets of `EXECIO`'s own options: CMS's `EXECIO`
+reads and writes through three kinds of destination — the program
+stack (`FIFO`/`LIFO`), a stem (`STEM stem.`), or a single plain
+variable (`VAR name`, but only for exactly one line at a time; the
+count operand must be `1` with `VAR`). TSO/E REXX in MVS supports only
+the stack and `STEM` forms — `VAR` is not part of its `EXECIO` syntax
+at all — and does not support REXX's stream I/O model at all outside
+the UNIX System Services (OMVS) subsystem, where full stream I/O
+(`LINEIN`, `LINEOUT`, `STREAM`, and `LINES`/`CHARS` returning accurate
+counts — the model ANSI Rexx standardized) is available. OS/2's
+classic Rexx has stream I/O functions too, but its `CHARS` and `LINES`
+return only 0 or 1, not exact counts. See Figure 10. Code that expects
+an exact number of characters or lines from those functions may fail
+on TSO/E or OS/2, and an implementation that *did* return exact
+numbers there could be horribly inefficient. Outside TSO/E and OS/2,
+full stream I/O is the norm; some interpreters still support `EXECIO`
+for compatibility with legacy TSO/CMS code, but it is not the primary
+I/O model there.
 
 #### Figure 10: I/O examples
 
