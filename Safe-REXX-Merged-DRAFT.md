@@ -1158,25 +1158,22 @@ ooRexx.
 
 ### <a id="io-model"></a>I/O model
 
-The I/O model described in the original two source papers — line
-oriented, based on the file system in the CMS component of IBM's
-VM/SP, contrasted against systems with no orientation towards line
-numbers — reflects a 1993–95 reality (revised 1998) that predates
-ANSI Rexx (1996) entirely; those papers never addressed the stream
-I/O it standardized. As of this edition, full stream I/O (`LINEIN`,
-`LINEOUT`, `STREAM`, and `LINES`/`CHARS` returning accurate counts) is
-the norm everywhere except z/OS's TSO/E and OS/2 — the two
-environments the rest of this section is actually about. TSO/E in MVS
-does not support the REXX I/O model at all outside the OMVS shell; it
-uses a subset of `EXECIO` instead. OS/2's classic Rexx keeps the
-older, more limited model below: its `CHARS` and `LINES` functions
-return only 0 or 1, not exact counts. See Figure 10. Code that
-expects an exact number of characters or lines from those functions
-may fail in either environment, and an implementation that *did*
-return exact numbers there could be horribly inefficient. Some
-interpreters still support `EXECIO` for compatibility with legacy
-TSO/CMS code, but outside TSO/E and CMS themselves it is no longer the
-primary I/O model.
+`EXECIO` is CMS's native mechanism for file I/O, working through
+stems or the program stack rather than individual `LINEIN`/`LINEOUT`
+calls. TSO/E REXX in MVS supports only a subset of `EXECIO` — the
+STEM and stack forms, not the variable-name form — and does not
+support REXX's stream I/O model at all outside the UNIX System
+Services (OMVS) subsystem, where full stream I/O (`LINEIN`,
+`LINEOUT`, `STREAM`, and `LINES`/`CHARS` returning accurate counts —
+the model ANSI Rexx standardized) is available. OS/2's classic Rexx
+has stream I/O functions too, but its `CHARS` and `LINES` return only
+0 or 1, not exact counts. See Figure 10. Code that expects an exact
+number of characters or lines from those functions may fail on TSO/E
+or OS/2, and an implementation that *did* return exact numbers there
+could be horribly inefficient. Outside TSO/E and OS/2, full stream I/O
+is the norm; some interpreters still support `EXECIO` for
+compatibility with legacy TSO/CMS code, but it is not the primary I/O
+model there.
 
 #### Figure 10: I/O examples
 
