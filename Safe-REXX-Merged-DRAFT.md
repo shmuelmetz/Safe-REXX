@@ -956,18 +956,19 @@ documented for that context are listed; a blank cell means none:
 | Invocation context | Default environment | Other environments |
 |---|---|---|
 | OS/2 command prompt (classic REXX) | `CMD` | |
-| Command prompt, Windows or OS/2 (OREXX, ooRexx) | `CMD` | `SYSTEM`, `PATH` on ooRexx |
-| Regina, from a command prompt | `SYSTEM` | `COMMAND`, `REXX` |
-| TSO/E READY prompt | `TSO` | `MVS`, `CONSOLE`†, the link/attach family, the APPC family |
-| ISPF (a dialog/panel exec, not editing), on z/OS | `TSO` | `MVS`, `CONSOLE`†, the link/attach family, the APPC family, `ISPEXEC` |
-| ISPF/PDF EDIT macro, on z/OS | `TSO` | `MVS`, `CONSOLE`†, the link/attach family, the APPC family, `ISPEXEC`, `ISREDIT` |
-| ISPF (dialog or edit macro), on z/VM | `CMS` | `ISPEXEC`; `ISREDIT` in an edit macro |
-| OMVS shell (z/OS UNIX System Services) | `SH` | `TSO`, `MVS`, `SYSCALL` |
-| Batch, via `IRXJCL` (no TSO or OMVS session) | `MVS` | the link/attach family, the APPC family |
-| System REXX (via `AXREXX` or an operator command) | `MVS` (`TSO=NO`) | the link/attach family, `APPCMVS`, `BCPii`, the APPC family; `TSO=YES` adds `TSO`, `ISPEXEC`, `ISREDIT` |
+| PC-DOS command prompt (classic REXX) | `COMMAND` | |
+| Windows/OS/2 command prompt (OREXX, ooRexx) | `CMD` | `SYSTEM`, `PATH` on ooRexx |
+| Regina command prompt | `SYSTEM` | `COMMAND`, `REXX` |
+| TSO/E READY | `TSO` | `MVS`, `CONSOLE`†, the link/attach family, the APPC family |
+| ISPF on z/OS | `TSO` | `MVS`, `CONSOLE`†, the link/attach family, the APPC family, `ISPEXEC` |
+| ISPF/PDF EDIT on z/OS | `TSO` | `MVS`, `CONSOLE`†, the link/attach family, the APPC family, `ISPEXEC`, `ISREDIT` |
+| ISPF on z/VM | `CMS` | `ISPEXEC`; `ISREDIT` in an edit macro |
+| OMVS shell | `SH` | `TSO`, `MVS`, `SYSCALL` |
+| `IRXJCL` | `MVS` | the link/attach family, the APPC family |
+| System REXX | `MVS` (`TSO=NO`) | the link/attach family, `APPCMVS`, `BCPii`, the APPC family; `TSO=YES` adds `TSO`, `ISPEXEC`, `ISREDIT` |
 | CMS command line | `CMS` | `COMMAND`, `CP` |
-| GCS (a z/VM guest environment distinct from CMS) | `GCS` | `COMMAND` |
-| XEDIT macro (CMS's screen editor) | `XEDIT` | falls through to `CMS`, then `CP`, automatically |
+| GCS | `GCS` | `COMMAND` |
+| XEDIT macro | `XEDIT` | falls through to `CMS`, then `CP`, automatically |
 
 The link/attach family: `LINK`, `LINKMVS`, `LINKPGM` (link to an
 unauthorized program on the same task level), `ATTACH`, `ATTCHMVS`,
@@ -988,8 +989,11 @@ way; `IPCS` does too, while analyzing a dump — none of the three
 appears in the TSO/E REXX Reference itself, so they aren't included in
 the table above pending a primary source.
 
-Sourcing: the OS/2-family, ooRexx, and Regina rows rest on each
-implementation's own reference manual. The TSO-family rows (READY,
+Sourcing: the OS/2-family, PC-DOS, ooRexx, and Regina rows rest on
+each implementation's own reference manual — the PC-DOS row on IBM's
+own PC DOS 7 REXX Reference, distinct from the third-party Personal
+REXX (Quercus Systems) also available for DOS. The TSO-family rows
+(READY,
 ISPF-on-z/OS, batch) come from IBM's TSO Extensions Version 2 REXX
 Reference. Its host command environment table grew between editions —
 SC28-1883-0 (1988) documents a noticeably smaller set, missing
@@ -1537,6 +1541,7 @@ directly by the author.
 
 - OS/2 Procedures Language 2/REXX Reference, S10G-6268
 - OS/2 Procedures Language 2/REXX User's Guide, S10G-6269
+- PC DOS 7 REXX User's Guide and Reference, IBM Corp., S83G-9228 (IBM's own REXX bundled with PC DOS 7, distinct from the third-party Personal REXX by Quercus Systems)
 - SAA Common Programming Interface Procedures Language Reference, SC26-4358
 - Object REXX Reference, IBM Corp. (the OS/2 edition of the manual for OREXX, IBM's cross-platform Object REXX for OS/2, Windows, and AIX, and the precursor to ooRexx)
 - TSO Extensions Version 2 REXX Reference, SC28-1883 (two editions consulted: SC28-1883-0, December 1988, and SC28-1883-4, August 1991 — the host command environment table grew noticeably between them, so the later edition is the one relied on for that table)
