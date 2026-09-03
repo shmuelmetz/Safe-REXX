@@ -67,9 +67,12 @@ permission is prohibited.
 
 ### <a id="what-is-rexx"></a>What is REXX?
 
-REXX is a language that was originally designed to replace the EXEC
-and EXEC2 command-macro languages in the CMS component of IBM's
-VM/SP. Since then it has spread to a large number of other platforms,
+REXX is a language originally designed, in 1979, by Mike Cowlishaw to
+replace the EXEC and EXEC2 command-macro languages in the CMS
+component of IBM's VM/SP. He initially named it REX; the name gained
+its second X by 1982, to avoid confusion with other products, before
+its first shipped release in VM/SP Release 3 (1983). Since then it
+has spread to a large number of other platforms,
 including Unix, and has been designated by IBM as the SAA Procedures
 Language. REXX has been used to implement a wide variety of
 applications beyond its original problem domain, including many of
@@ -1622,6 +1625,7 @@ directly by me.
 - z/OS Using REXX and z/OS UNIX System Services, IBM Corp., SA23-2283 (documents TSO/E REXX's behavior in the OMVS shell separately from the TSO/E REXX Reference above)
 - z/VM REXX/VM Reference, IBM Corp., SC24-6314
 - The REXX Language: A Practical Approach to Programming, 2nd Edition. By Michael F. Cowlishaw (Prentice-Hall, Inc., a division of Simon & Schuster), Englewood Cliffs, New Jersey 07632, ISBN 0-13-780651-5
+- Rexx brief history, Michael F. Cowlishaw, <https://speleotrove.com/rexxhist/rexxhistory.html> (source for the REX-to-REXX naming history and early VM/SP release dates)
 - Open Object Rexx (ooRexx) Reference, The RexxLA/Open Object Rexx project, <https://www.oorexx.org/>
 - Josep Maria Blasco's Rexx Parser (AST/element parser for Rexx, ooRexx, and Executor, written in ooRexx itself), <https://github.com/JosepMariaBlasco/rexx-parser>, also distributed as part of RexxLA's net-oo-rexx
 - ANSI X3.274-1996, Information Technology — Programming Language REXX, American National Standards Institute. Section citations in this edition are drawn from RexxLA's hosted copy of the X3J18 committee's document (X3J18-199X, <https://www.rexxla.org/rexxlang/standards/j18pub.pdf>), the last public-review draft before ratification, not the final published ANSI text itself.
