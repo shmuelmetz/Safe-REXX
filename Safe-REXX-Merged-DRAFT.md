@@ -67,12 +67,13 @@ permission is prohibited.
 
 ### <a id="what-is-rexx"></a>What is REXX?
 
-REXX is a language originally designed, in 1979, by Mike Cowlishaw to
+REXX is a language designed by Mike Cowlishaw, initially under the
+name REX, in 1979; REX saw internal use at IBM before being renamed
+REXX — gaining its second X by 1982, to avoid confusion with other
+products — and shipping for the first time in VM/SP Release 3, to
 replace the EXEC and EXEC2 command-macro languages in the CMS
-component of IBM's VM/SP. He initially named it REX; the name gained
-its second X by 1982, to avoid confusion with other products, before
-its first shipped release in VM/SP Release 3 (1983). Since then it
-has spread to a large number of other platforms,
+component of IBM's VM/SP. Since then it has spread to a large number
+of other platforms,
 including Unix, and has been designated by IBM as the SAA Procedures
 Language. REXX has been used to implement a wide variety of
 applications beyond its original problem domain, including many of
@@ -1165,10 +1166,9 @@ from the ANSI standard itself.
 
 ### <a id="io-model"></a>I/O model
 
-The original implementation of REX on CMS used the `EXECIO` command,
-later inherited by TSO/E and other platforms. The two implementations
-support different subsets of `EXECIO`'s own options: CMS's `EXECIO`
-reads and writes through three kinds of destination — the program
+`EXECIO` is CMS's native file I/O command. CMS and TSO/E support
+different subsets of its options: CMS's `EXECIO` reads and writes
+through three kinds of destination — the program
 stack (`FIFO`/`LIFO`), a stem (`STEM stem.`), or a single plain
 variable (`VAR name`, but only for exactly one line at a time; the
 count operand must be `1` with `VAR`). TSO/E REXX in MVS supports only
