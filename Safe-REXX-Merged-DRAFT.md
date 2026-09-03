@@ -1183,7 +1183,7 @@ pins down when a given interpreter actually added it.
 
 `LINEIN(file)` reads the next line from `file`; `LINEOUT(file,
 string)` writes a line to it. `LINES(file)` and `CHARS(file)` report
-whether more data remains, for use as a loop condition before the next
+whether more data remain, for use as a loop condition before the next
 read. TSO/E REXX in MVS does not support stream I/O at all outside the
 UNIX System Services (OMVS) subsystem, where full stream I/O is
 available.
