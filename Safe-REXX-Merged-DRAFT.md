@@ -1166,33 +1166,37 @@ from the ANSI standard itself.
 
 ### <a id="io-model"></a>I/O model
 
-CMS's REXX interpreter supports full stream I/O (`LINEIN`, `LINEOUT`,
-`LINES`, `CHARS`) natively — this isn't something CMS added later,
-it's the origin of what's meant by "the REXX I/O model." What isn't
-guaranteed, on CMS or anywhere else, is that `CHARS()` or `LINES()`
-return an exact count: ANSI Rexx explicitly permits either one to
-report only whether at least one more character or line is available
-(`0` or `1`) instead of a real count. Which one actually returns an
-exact count, for which kind of stream, is a per-implementation,
-per-function choice, not a clean split by platform: on CMS, `LINES()`
-returns an exact count for disk files but `CHARS()` never does, even
-for files; on ooRexx, `CHARS()` returns an exact count for disk files
-but its own `LINES()` returns only `0` or `1`. On TSO/E and OS/2, both
-`CHARS()` and `LINES()` return only `0` or `1`, for every kind of
-stream. See Figure 10. Code that relies on an exact count from either
-function should be checked against that specific target's own
-documented behavior — never assumed portable, and an implementation
-that *did* return an exact count where none was expected could be
-horribly inefficient.
+The original implementation of REX on CMS used the `EXECIO` command,
+later inherited by TSO/E and other platforms; through at least VM/SP
+Release 5 (1986), it was CMS's only file I/O mechanism, alongside the
+program stack. CMS's `EXECIO` reads and writes through three kinds of
+destination — the program stack (`FIFO`/`LIFO`), a stem (`STEM
+stem.`), or a single plain variable (`VAR name`, but only for exactly
+one line at a time; the count operand must be `1` with `VAR`). Of
+these, TSO/E REXX in MVS inherited only a subset: the stack and `STEM`
+forms, not `VAR`.
 
-`EXECIO` is CMS's separate, bulk-oriented file I/O command. CMS's
-`EXECIO` reads and writes through three kinds of destination — the
-program stack (`FIFO`/`LIFO`), a stem (`STEM stem.`), or a single
-plain variable (`VAR name`, but only for exactly one line at a time;
-the count operand must be `1` with `VAR`). TSO/E REXX in MVS supports
-only a subset — the stack and `STEM` forms, not `VAR` — and does not
-support stream I/O at all outside the UNIX System Services (OMVS)
-subsystem, where full stream I/O is available. Some interpreters still
+Stream I/O (`LINEIN`, `LINEOUT`, `LINES`, `CHARS`) came later — absent
+from VM/SP's own Interpreter Reference through Release 5 (1986), and
+documented as standard by the time of Cowlishaw's TRL-2 (1990) and
+later ANSI X3.274-1996. What isn't guaranteed, once stream I/O is
+available at all, is that `CHARS()` or `LINES()` return an exact
+count: ANSI Rexx explicitly permits either one to report only whether
+at least one more character or line is available (`0` or `1`) instead
+of a real count. Which one actually returns an exact count, for which
+kind of stream, is a per-implementation, per-function choice, not a
+clean split by platform: on CMS, `LINES()` returns an exact count for
+disk files but `CHARS()` never does, even for files; on ooRexx,
+`CHARS()` returns an exact count for disk files but its own `LINES()`
+returns only `0` or `1`. TSO/E REXX in MVS does not support stream I/O
+at all outside the UNIX System Services (OMVS) subsystem, where full
+stream I/O is available. OS/2's classic Rexx has stream I/O functions
+too, but both `CHARS()` and `LINES()` return only `0` or `1` there,
+for every kind of stream. See Figure 10. Code that relies on an exact
+count from either function should be checked against that specific
+target's own documented behavior — never assumed portable, and an
+implementation that *did* return an exact count where none was
+expected could be horribly inefficient. Some interpreters still
 support `EXECIO` for compatibility with legacy TSO/CMS code, but it is
 not the primary I/O model outside TSO/E and CMS themselves.
 
