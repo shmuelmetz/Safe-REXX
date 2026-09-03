@@ -36,7 +36,14 @@ permission is prohibited.
    - [What is REXX?](#what-is-rexx)
    - [Platforms and standards conformance](#platforms-and-standards)
    - [Summary of pitfalls](#summary-of-pitfalls)
-2. [Specific examples and recommended avoidance tactics](#specific-examples)
+2. [Compatibility and environmental considerations](#compatibility)
+   - [ADDRESS and the default environment](#address)
+   - [Environmental factors](#environmental-factors)
+   - [I/O model](#io-model)
+   - [PARSE SOURCE and VERSION](#parse-source-and-version)
+   - [Availability of optional function libraries](#function-library-availability)
+   - [Variable patterns](#variable-patterns)
+3. [Specific examples and recommended avoidance tactics](#specific-examples)
    - [Abutment](#abutment)
    - [Continuation](#continuation)
    - [Keywords](#keywords)
@@ -47,13 +54,6 @@ permission is prohibited.
    - [Dropped symbols used as constants](#dropped-symbols)
    - [Variable references](#variable-references)
    - [I/O portability](#io-pitfalls)
-3. [Compatibility and environmental considerations](#compatibility)
-   - [ADDRESS and the default environment](#address)
-   - [Environmental factors](#environmental-factors)
-   - [I/O model](#io-model)
-   - [PARSE SOURCE and VERSION](#parse-source-and-version)
-   - [Availability of optional function libraries](#function-library-availability)
-   - [Variable patterns](#variable-patterns)
 4. [ooRexx-specific pitfalls](#oorexx-specific-pitfalls)
 5. [Debugging: reach for TRACE before guessing from black-box behavior](#debugging)
 6. [Recapitulation](#recapitulation)
@@ -169,6 +169,434 @@ open-source project) is itself an
 object-Rexx family member, not a classic-Rexx dialect — but an older,
 more limited one: see the specific `~translate` vs `~upper` gap noted
 below.
+
+---
+
+## <a id="compatibility"></a>Compatibility and environmental considerations
+
+REXX has some specific features that you can exploit to make your
+programs more compatible across platforms, or between environments on
+the same platform. REXX also has some features that hinder
+compatibility.
+
+### <a id="address"></a>ADDRESS and the default environment
+
+If you write a command file that issues host commands — OS/2, CMS,
+TSO, DOS commands — do not assume that the default environment is
+that of the host itself. By including, e.g., `ADDRESS TSO` (on a
+mainframe) or `ADDRESS CMD` (on OS/2/Windows), you enable the routine
+for use from within other environments too, e.g., the ISPF/PDF editor
+on a mainframe, or an editor that uses REXX as its macro language on
+a PC.
+
+A platform name alone is too coarse here — the *invocation context*,
+not just the OS, decides the default. Only environments actually
+documented for that context are listed; a blank cell means none:
+
+| Invocation context | Default environment | Other environments |
+|---|---|---|
+| OS/2 command prompt (classic REXX) | `CMD` | |
+| PC-DOS command prompt (classic REXX) | `COMMAND` | |
+| Command prompt (OREXX, ooRexx) | `CMD` | `SYSTEM`, `PATH` on ooRexx |
+| Regina command prompt | `SYSTEM` | `COMMAND`, `REXX` |
+| TSO/E READY | `TSO` | `MVS`, `CONSOLE`†, the link/attach family, the APPC family |
+| ISPF on z/OS | `TSO` | `MVS`, `CONSOLE`†, the link/attach family, the APPC family, `ISPEXEC` |
+| ISPF/PDF EDIT on z/OS | `TSO` | `MVS`, `CONSOLE`†, the link/attach family, the APPC family, `ISPEXEC`, `ISREDIT` |
+| ISPF on z/VM | `CMS` | `ISPEXEC` |
+| ISPF/PDF EDIT on z/VM | `CMS` | `ISPEXEC`, `ISREDIT` |
+| OMVS shell | `SH` | `TSO`, `MVS`, `SYSCALL` |
+| `IRXJCL` | `MVS` | the link/attach family, the APPC family |
+| System REXX | `MVS` (`TSO=NO`) | the link/attach family, `APPCMVS`, `BCPii`, the APPC family; `TSO=YES` adds `TSO`, `ISPEXEC`, `ISREDIT` |
+| EDIT macro | `EDIT` | none — `TSO` itself is unavailable until `END` terminates `EDIT` |
+| TEST macro | `TEST` | none — `TSO` itself is unavailable until `END` or `RUN` terminates `TEST` |
+| IPCS macro | `TSO` | `IPCS` — not available at all in the session's own separate TSO/E mode |
+| CMS command line | `CMS` | `COMMAND`, `CP` |
+| GCS | `GCS` | `COMMAND` |
+| XEDIT macro | `XEDIT` | falls through to `CMS`, then `CP`, automatically |
+
+The link/attach family: `LINK`, `LINKMVS`, `LINKPGM` (link to an
+unauthorized program on the same task level), `ATTACH`, `ATTCHMVS`,
+`ATTCHPGM` (attach one on a different task level) — available to a
+REXX exec in *any* address space, TSO/E or not. The APPC family:
+`CPICOMM` (SAA CPI Communications calls), `LU62` (APPC/MVS calls,
+SNA LU 6.2) — likewise available in any MVS address space. † `CONSOLE`
+needs an active extended MCS console session (started with the TSO/E
+`CONSOLE` command) and console command authority; it's available only
+in the TSO/E address space, not from batch. `ISREDIT` requires an
+active edit session regardless of platform — attempting it outside one
+fails at run time even where the environment is nominally available.
+
+Standard Rexx (not an ooRexx-only extension) can capture a child
+process's stdout and stderr directly into stems, with no temp files or
+pipes needed:
+
+```rexx
+address system 'some-command' with output stem out. error stem err.
+cmdRc = rc
+do i = 1 to out.0
+    say out.i
+end
+do i = 1 to err.0
+    say '  [stderr]' err.i
+end
+```
+
+TSO/E REXX has no `ADDRESS WITH` at all to do this with — like classic
+OS/2 REXX and OREXX, it predates the ANSI-1996 enhancement. Its own
+mechanism for capturing host-command output is the `OUTTRAP` built-in
+function instead, which traps subsequent command output into a stem
+(or the program stack) until turned back off:
+
+```rexx
+call outtrap 'mystem.'     /* start trapping into mystem. */
+'LISTC LEVEL(MY.DATA)'
+call outtrap 'off'         /* stop trapping */
+do i = 1 to mystem.0
+    say mystem.i
+end
+```
+
+See [Continuation](#continuation) below (Figures 2 and 3) for the
+continuation pitfalls specific to `OUTTRAP`'s own argument list.
+
+Valid I/O redirect types in the `WITH` clause are `NORMAL`, `STEM`,
+`STREAM`, and `USING` — `STRING` is not a valid type. Of these, `USING`
+— supplying the input value directly, `input using (expr)`, with no
+stem or stream needed — goes beyond ANSI X3.274-1996's own `ADDRESS
+WITH` semantics, which define only `STREAM` and `STEM` as resource
+types; `NORMAL`/`STEM`/`STREAM` are standard, but `USING` is an ooRexx
+extension (ooRexx 5.2.0). Regina does not have it: its own reference
+manual's `ADDRESS WITH` syntax diagram lists only `STREAM`, `STEM`,
+`LIFO`, and `FIFO` as resource types — `LIFO` and `FIFO` are Regina's
+own extensions beyond the ANSI baseline, but `USING` appears nowhere
+in the manual. Neither classic OS/2 REXX nor OREXX has it either — per
+IBM's own OS/2 reference documentation for both (Procedures Language
+2/REXX Reference and Object REXX Reference), the `ADDRESS` instruction's
+own syntax diagram in *both* is just `ADDRESS [environment]
+[expression]`, no `WITH` clause of any kind. Neither ever had *any*
+form of `ADDRESS WITH`, `USING` included; the whole I/O redirection
+clause is an enhancement neither IBM product picked up.
+To supply empty stdin (preventing a child process from blocking
+waiting for input), define an empty stem and pass it as `INPUT STEM`:
+
+```rexx
+noIn.0 = 0
+address system cmd with output stem out. error stem err. input stem noIn.
+```
+
+Do not wrap the command itself in `cmd /c "..."` on Windows, even
+though it may seem like it should be needed — `ADDRESS SYSTEM`
+already dispatches straight to the platform's native shell. An extra
+`cmd /c` layer is redundant at best, and actively wrong once the
+wrapped command itself contains its own quoted arguments (a path with
+spaces, a commit message with spaces): `cmd.exe`'s quote parser does
+not reliably handle the resulting nested quoting.
+
+### <a id="environmental-factors"></a>Environmental factors
+
+REXX does not shield you from the underlying environment; in writing
+a REXX program you must understand the behavior of your operating
+system and user interface if you want to avoid nasty surprises. As an
+example, if you invoke a REXX program in an OS/2 CMD file and scan
+the argument looking for the string `/Q`, you will not find it,
+because `CMD.EXE` will have taken the string `/Q` to be a "quiet"
+option and removed it.
+
+If you must use binary or hexadecimal constants for character data,
+be aware that character encoding varies among systems, and not just
+between EBCDIC and ASCII. CMS and TSO use EBCDIC. Most other systems
+use some combination of plain 7-bit ASCII, an 8-bit code page
+extending ASCII (e.g. Latin-1, Windows-1252 — the specific extension
+matters, since they disagree above code point 127), and Unicode
+(typically UTF-8 or UTF-16) — which one depends on the specific
+system, its locale/code-page configuration, and the file or stream in
+question, not just the OS family. Even within CMS and TSO there are
+national-language issues, and in many systems there are code-page
+issues. Be aware of the character sets used in each of your target
+systems, and program accordingly. Segregate system-dependent values
+and code-page-dependent values to make your code easier to maintain.
+
+Rexx variable names and labels are case-insensitive on every
+platform, in every dialect — but two related things are not, and the
+platform matters:
+
+- Filenames on Windows (NTFS) or ArcaOS/OS2 (JFS) may be
+  case-insensitive in practice, but should still be treated as
+  case-sensitive in code that must also run on Linux.
+- The `VALUE()` built-in for reading environment variables is
+  case-sensitive on Linux but case-insensitive on Windows.
+
+**ooRexx note**: for case-insensitive comparisons generally, not just
+the platform-specific cases above, ooRexx's `.String` class provides a
+`caseless`-prefixed method family directly — `caselessEquals`,
+`caselessCompare`, `caselessPos`, `caselessCountStr`,
+`caselessChangeStr`, `caselessAbbrev`, `caselessMatch`,
+`caselessStartsWith`/`caselessEndsWith`, `caselessWordPos`,
+`caselessContains`/`caselessContainsWord` — rather than calling
+`TRANSLATE()`/`~upper` on both sides before every comparison. `PARSE`
+itself has a `CASELESS` modifier too (alongside `LOWER`) for
+case-independent template matching — but unlike `PARSE UPPER`, which
+is genuine ANSI X3.274-1996 syntax (spelled out in full; the standard
+documents no abbreviated form for it), neither `LOWER` nor `CASELESS`
+appears anywhere in the ANSI text: both are extensions, present in
+ooRexx and Regina alike but absent from TRL-2-level classic Rexx and
+from the ANSI standard itself.
+
+### <a id="io-model"></a>I/O model
+
+REXX's first shipped implementation, on CMS in VM/SP Release 3, used
+the `EXECIO` command, later inherited by TSO/E and other platforms.
+CMS's `EXECIO` reads and writes through three kinds of source or
+target — the program stack (`FIFO`/`LIFO`), a stem (`STEM stem.`), or
+a single plain variable (`VAR name`, but only for exactly one line at
+a time; the count operand must be `1` with `VAR`) — the source for a
+write, the target for a read. Of these, TSO/E REXX in MVS inherited
+only a subset: the stack and `STEM` forms, not `VAR`. Some
+interpreters still support `EXECIO` for compatibility with legacy
+TSO/CMS code, but it is not the primary I/O model outside TSO/E and
+CMS themselves.
+
+Stream I/O came later. It's part of the language as defined in
+Cowlishaw's TRL-2 (1990) and later formalized by ANSI X3.274-1996.
+`LINEIN(file)`/`LINEOUT(file, string)` read and write whole lines;
+`CHARIN(file)`/`CHAROUT(file, string)` do the same character by
+character; `LINES(file)` and `CHARS(file)` report whether more data
+remain, for use as a loop condition before the next read;
+`STREAM(file, option)` queries or acts on a stream — `'State'` reports
+its overall status, `'Description'` a fuller status string, `'Command'`
+executes an operation on it. See Figure 10.
+
+#### Figure 10: I/O examples
+
+```rexx
+/* In OS/2 SAA REXX */
+do while lines(myfile) /= 0
+   myline = linein(myfile)
+   ...
+   end
+
+/* In CMS and TSO REXX */
+'EXECIO *' name '(STEM MYSTEM. FINIS'
+do i = 1 to mystem.0
+   parse var mystem.i myline
+   ...
+   end
+```
+
+TSO/E REXX in MVS does not support stream I/O at all, except in the
+UNIX System Services subsystem (originally called OpenEdition, or
+Open MVS); code that must run in environments supporting stream I/O
+and also in, e.g., TSO, can use conditional logic to select `EXECIO`
+on the TSO side (see [PARSE SOURCE and VERSION](#parse-source-and-version)
+below for how to detect which side you're on).
+
+**ooRexx note**: I/O object types. Alongside the bare functions above,
+ooRexx models stream I/O as a small class family: `.Stream` is the
+concrete class most code uses, wrapping a file or other stream as an
+object — `aStream~lines`, `aStream~chars`, `aStream~linein`,
+`aStream~lineout`, `aStream~charin`, `aStream~charout`, and so on,
+with identical semantics (the same `0`-or-`1`-vs-exact-count behavior
+included) as their function-call equivalents. `.InputStream`,
+`.OutputStream`, and `.InputOutputStream` are abstract mixin classes
+underneath it, meant for building custom stream implementations, not
+for direct use on an ordinary file.
+
+The safest thing is to encapsulate your input/output code and then
+take advantage of whatever facilities may exist in each target
+system, e.g., `EXECIO` with the `STEM` option, or a third-party
+library such as REXXLIB. Any such code should be thoroughly
+documented. Be aware that `EXECIO` in TSO/E supports only the stem
+and stack forms, not the variable-name form; even in CMS, it is
+usually best to use the stem form of `EXECIO`.
+
+### <a id="parse-source-and-version"></a>PARSE SOURCE and VERSION
+
+The `PARSE SOURCE` statement allows your code to determine the
+operating system and file from which it was invoked, as well as the
+type of invocation. You can take advantage of this in order to
+maintain a single version of a REXX program for two different
+systems, to detect inappropriate invocations, to select character
+encoding, etc. If you have data files that, by default, should be in
+the same directory as your code, you can use this statement to locate
+them. See Figure 11.
+
+The `PARSE VERSION` statement allows you to determine the language
+level of REXX that your program has available. This allows you to
+write code that exploits new features of REXX, yet include alternate
+code that will be used when running on an older platform.
+
+#### Figure 11: PARSE SOURCE and PARSE VERSION examples
+
+```rexx
+parse source system invocation origin
+
+select
+   when system = 'OS/2' then do
+     ...
+     end
+   when system = 'TSO' then do
+     ...
+     end
+   otherwise do
+     say system 'is not supported by' origin
+     exit
+     end
+   end
+
+parse version name level date1 date2 date3 .
+select
+   when name = 'REXXSAA' then do
+      parse var level int '.' frac
+      if int > 3 then do
+         /* fast code for SAA level 4 goes here */
+         end
+      else do
+         /* slower code for older SAA level goes here */
+         end
+      end
+   when name = 'REXX370' then do
+      /* Code for CMS or TSO level of REXX goes here */
+      end
+   otherwise do
+      say name 'is an unsupported REXX implementation'
+      exit
+   end
+   end
+```
+
+**ooRexx note**: the classic `REXXSAA`/`REXX370` name values above are
+platform-specific classic-Rexx implementation names; ooRexx reports
+neither.
+
+```
+parse version v
+say v
+```
+
+on ooRexx 5.2.0 produces:
+
+```
+REXX-ooRexx_5.2.0(MT)_64-bit 6.06 18 Apr 2026
+```
+
+If your `SELECT` on `PARSE VERSION`'s `name` field needs to
+distinguish ooRexx from classic implementations, match on a `name`
+that begins with `REXX-ooRexx`, e.g., `when name~abbrev('REXX-ooRexx')
+then do ... end` — do not assume `name` will be one of the two classic
+values above. The two classic values themselves are also not the
+whole story — the full set of `name`/`level` values you may actually
+meet:
+
+| Implementation | `name` | `level` | Source |
+|---|---|---|---|
+| OS/2 classic REXX (Procedures Language 2/REXX) | `REXXSAA` | `4.00` | IBM's own reference manual |
+| OREXX (IBM's Object REXX) | `OBJREXX` | `6.00` | IBM's own reference manual (OS/2 edition) |
+| CMS / TSO/E REXX (classic mainframe, "REXX370") | `REXX370` | `4.00` | Widely documented |
+| Regina | `REXX-Regina_<version>` (e.g. `REXX-Regina_3.9.6(MT)`) | `5.00` | Regina's own reference manual; ANSI-compliant since Regina 3.1 |
+| ooRexx | `REXX-ooRexx_<version>(MT)_<bits>-bit` (e.g. `REXX-ooRexx_5.2.0(MT)_64-bit`) | `6.06` | ooRexx 5.2.0 |
+
+Two things worth noticing in this table. First, `level` is *not* the
+interpreter's own version number — it is the Rexx *language level* the
+interpreter targets (`4.00` is TRL-2, `5.00` is ANSI X3.274-1996), and
+several implementations have historically conflated the two; look for
+the interpreter's own version inside the `name` word instead (as
+ooRexx and Regina both do) or in `PARSE SOURCE`. Second, `REXXSAA` and
+`REXX370` share the exact same `level`, `4.00` — despite one being a
+PC/workstation implementation and the other a mainframe one — because
+neither was ever brought up to the ANSI-1996 level; see
+[Platforms and standards conformance](#platforms-and-standards) above.
+
+### <a id="function-library-availability"></a>Availability of optional function libraries
+
+Do not assume that an optional function library your code depends on
+is actually loaded in every environment it might run in. The original
+form of this advice, in both source papers, was framed around a
+specific and by-2023 obsolete scenario: OS/2's RexxUtil requires
+Presentation Manager, which was too large to fit on a 1.44MB emergency
+boot floppy, so code meant to run from one had to avoid depending on
+RexxUtil and fall back to a more primitive equivalent — one route
+being `BOOTOS2` to build a bootable maintenance partition or emergency
+floppy still capable of loading RexxUtil, WPS, or PM sessions on a
+minimum boot configuration. See Figure 12.
+
+#### Figure 12: Function-library availability check
+
+```rexx
+if REXXUTIL_loaded then do
+   stat = SysFileTree(filespec, 'filelist.', 'FSO')
+   do i = 1 to filespec.0
+      ...
+      end
+   end
+else do
+   'DIR' filespec '/F /O > WORK_FILE'
+   ...
+   end
+```
+
+The emergency-boot-floppy scenario itself is long obsolete, but the
+underlying principle is not: any function library your code treats as
+"just there" — RexxUtil, an ooRexx package pulled in via `::REQUIRES`,
+a third-party library like REXXLIB — may genuinely not be loaded in
+every environment your code might run in, and checking before you
+depend on it is cheap insurance.
+
+The modern equivalent check before using a RexxUtil function —
+standard across classic Rexx and ooRexx alike, not an ooRexx-only
+mechanism — is `RxFuncQuery`, and the standard way to load the package
+at all (needed at least once per process, since it's not autoloaded
+the way some built-ins are) is:
+
+```rexx
+call RxFuncAdd 'SysLoadFuncs', 'RexxUtil', 'SysLoadFuncs'
+call SysLoadFuncs
+```
+
+running this unconditionally at the top of a script is the practical,
+idiomatic equivalent of Figure 12's availability check for the common
+case where you'd rather just load the package than branch on whether
+it's there — reach for the explicit `RxFuncQuery` branch only when a
+genuine no-RexxUtil fallback path exists, the way the original boot-disk
+scenario needed one.
+
+**Loading the package is not the same as every function in it being
+present.** The repertoire behind the name `RexxUtil` is not itself
+standardized, and varies by implementation:
+
+| Function(s) | OREXX | ooRexx 5.2.0 | Regina (`RegUtil`) |
+|---|---|---|---|
+| `SysFileCopy`, `SysFileMove` | No (Windows edition) | Yes | No — `SysCopyObject`/`SysMoveObject` instead |
+| The `SysIsFileXxx` family (`SysIsFile`, `SysIsFileDirectory`, `SysIsFileLink`, and the Windows-only detail variants) | No | Yes | No |
+| The Workplace-Shell family (`SysCreateObject`, `SysDestroyObject`, `SysSetObjectData`, `SysQueryClassList`, and related) | Yes, but only in the OS/2 edition | No | No |
+| The semaphore family (`SysCreateEventSem`, `SysCreateMutexSem`, and related) | Yes | Yes, but deprecated in favor of the `.EventSemaphore`/`.MutexSemaphore` classes | Yes |
+| Unix process functions (`SysFork`, `SysWait`, `SysCreatePipe`) and `SysGetMessage`/`SysGetMessageX` (Unix message catalogs) | Yes, in the AIX edition | Yes, on Unix-like platforms | No |
+| `SysWinGetPrinters`, `SysWinGetDefaultPrinter`, `SysWinSetDefaultPrinter`, `SysFormatMessage`, `SysGetLongPathName`, `SysGetShortPathName`, `SysShutdownSystem` | No | Yes | No |
+| `SysLoadFuncs`/`SysDropFuncs` | Required, to register the package | Deprecated no-ops since ooRexx 4.0.0 — the package is auto-registered | Required, to register the package |
+
+Ordinary file/directory operations (`SysFileTree`, `SysMkDir`,
+`SysRmDir`, `SysSearchPath`, `SysTempFileName`, `SysGetFileDateTime`,
+`SysSetFileDateTime`, `SysDriveInfo`, `SysDriveMap`, `SysVolumeLabel`,
+`SysWaitNamedPipe`), the macro-space family, console I/O (`SysCls`,
+`SysGetKey`, `RxMessageBox`, and related — Windows-only in all three),
+and `SysQueryProcess` are present in all three; `SysFileTree` and
+`SysQueryProcess` are each documented as behaving differently across
+platforms, so test them on each target rather than assuming identical
+semantics.
+
+A blanket "is RexxUtil loaded?" check, whether via Figure 12's flag or
+`RxFuncQuery('SysLoadFuncs')`, only tells you the package itself
+loaded — it says nothing about whether the *specific* function you're
+about to call is part of that implementation's repertoire. Guard any
+WPS-specific (or otherwise platform-specific) call with its own
+`RxFuncQuery` on that function's own name, not just on the package.
+
+### <a id="variable-patterns"></a>Variable patterns
+
+If you use variable patterns in the templates of your `PARSE`
+statements, be aware that some extremely old implementations of REXX
+do not support all forms — e.g., in MVS/XA the form `+(variable)` is
+not available. If you need to run on multiple platforms, check which
+forms are supported on each and program accordingly.
 
 ---
 
@@ -931,7 +1359,7 @@ variable pool other than the program's own — `VALUE(name, newvalue,
 Rexx variable, the mechanism behind the `OS2ENVIRONMENT` examples in
 Figure 2 above — something `INTERPRET` has no direct equivalent for at
 all. The third argument is not universal, though: REXX/VM under GCS
-(see [ADDRESS and the default environment](#address) below) does not
+(see [ADDRESS and the default environment](#address) above) does not
 support the `selector` argument at all, only the two-argument form.
 Building a string and running it through `INTERPRET` can achieve the
 same thing, but `INTERPRET` executes whatever Rexx source text it is
@@ -1058,434 +1486,6 @@ s~command('OPEN WRITE REPLACE')
 s~lineout(newContent)
 s~close()
 ```
-
----
-
-## <a id="compatibility"></a>Compatibility and environmental considerations
-
-REXX has some specific features that you can exploit to make your
-programs more compatible across platforms, or between environments on
-the same platform. REXX also has some features that hinder
-compatibility.
-
-### <a id="address"></a>ADDRESS and the default environment
-
-If you write a command file that issues host commands — OS/2, CMS,
-TSO, DOS commands — do not assume that the default environment is
-that of the host itself. By including, e.g., `ADDRESS TSO` (on a
-mainframe) or `ADDRESS CMD` (on OS/2/Windows), you enable the routine
-for use from within other environments too, e.g., the ISPF/PDF editor
-on a mainframe, or an editor that uses REXX as its macro language on
-a PC.
-
-A platform name alone is too coarse here — the *invocation context*,
-not just the OS, decides the default. Only environments actually
-documented for that context are listed; a blank cell means none:
-
-| Invocation context | Default environment | Other environments |
-|---|---|---|
-| OS/2 command prompt (classic REXX) | `CMD` | |
-| PC-DOS command prompt (classic REXX) | `COMMAND` | |
-| Command prompt (OREXX, ooRexx) | `CMD` | `SYSTEM`, `PATH` on ooRexx |
-| Regina command prompt | `SYSTEM` | `COMMAND`, `REXX` |
-| TSO/E READY | `TSO` | `MVS`, `CONSOLE`†, the link/attach family, the APPC family |
-| ISPF on z/OS | `TSO` | `MVS`, `CONSOLE`†, the link/attach family, the APPC family, `ISPEXEC` |
-| ISPF/PDF EDIT on z/OS | `TSO` | `MVS`, `CONSOLE`†, the link/attach family, the APPC family, `ISPEXEC`, `ISREDIT` |
-| ISPF on z/VM | `CMS` | `ISPEXEC` |
-| ISPF/PDF EDIT on z/VM | `CMS` | `ISPEXEC`, `ISREDIT` |
-| OMVS shell | `SH` | `TSO`, `MVS`, `SYSCALL` |
-| `IRXJCL` | `MVS` | the link/attach family, the APPC family |
-| System REXX | `MVS` (`TSO=NO`) | the link/attach family, `APPCMVS`, `BCPii`, the APPC family; `TSO=YES` adds `TSO`, `ISPEXEC`, `ISREDIT` |
-| EDIT macro | `EDIT` | none — `TSO` itself is unavailable until `END` terminates `EDIT` |
-| TEST macro | `TEST` | none — `TSO` itself is unavailable until `END` or `RUN` terminates `TEST` |
-| IPCS macro | `TSO` | `IPCS` — not available at all in the session's own separate TSO/E mode |
-| CMS command line | `CMS` | `COMMAND`, `CP` |
-| GCS | `GCS` | `COMMAND` |
-| XEDIT macro | `XEDIT` | falls through to `CMS`, then `CP`, automatically |
-
-The link/attach family: `LINK`, `LINKMVS`, `LINKPGM` (link to an
-unauthorized program on the same task level), `ATTACH`, `ATTCHMVS`,
-`ATTCHPGM` (attach one on a different task level) — available to a
-REXX exec in *any* address space, TSO/E or not. The APPC family:
-`CPICOMM` (SAA CPI Communications calls), `LU62` (APPC/MVS calls,
-SNA LU 6.2) — likewise available in any MVS address space. † `CONSOLE`
-needs an active extended MCS console session (started with the TSO/E
-`CONSOLE` command) and console command authority; it's available only
-in the TSO/E address space, not from batch. `ISREDIT` requires an
-active edit session regardless of platform — attempting it outside one
-fails at run time even where the environment is nominally available.
-
-Standard Rexx (not an ooRexx-only extension) can capture a child
-process's stdout and stderr directly into stems, with no temp files or
-pipes needed:
-
-```rexx
-address system 'some-command' with output stem out. error stem err.
-cmdRc = rc
-do i = 1 to out.0
-    say out.i
-end
-do i = 1 to err.0
-    say '  [stderr]' err.i
-end
-```
-
-TSO/E REXX has no `ADDRESS WITH` at all to do this with — like classic
-OS/2 REXX and OREXX, it predates the ANSI-1996 enhancement. Its own
-mechanism for capturing host-command output is the `OUTTRAP` built-in
-function instead, which traps subsequent command output into a stem
-(or the program stack) until turned back off:
-
-```rexx
-call outtrap 'mystem.'     /* start trapping into mystem. */
-'LISTC LEVEL(MY.DATA)'
-call outtrap 'off'         /* stop trapping */
-do i = 1 to mystem.0
-    say mystem.i
-end
-```
-
-See [Continuation](#continuation) above (Figures 2 and 3) for the
-continuation pitfalls specific to `OUTTRAP`'s own argument list.
-
-Valid I/O redirect types in the `WITH` clause are `NORMAL`, `STEM`,
-`STREAM`, and `USING` — `STRING` is not a valid type. Of these, `USING`
-— supplying the input value directly, `input using (expr)`, with no
-stem or stream needed — goes beyond ANSI X3.274-1996's own `ADDRESS
-WITH` semantics, which define only `STREAM` and `STEM` as resource
-types; `NORMAL`/`STEM`/`STREAM` are standard, but `USING` is an ooRexx
-extension (ooRexx 5.2.0). Regina does not have it: its own reference
-manual's `ADDRESS WITH` syntax diagram lists only `STREAM`, `STEM`,
-`LIFO`, and `FIFO` as resource types — `LIFO` and `FIFO` are Regina's
-own extensions beyond the ANSI baseline, but `USING` appears nowhere
-in the manual. Neither classic OS/2 REXX nor OREXX has it either — per
-IBM's own OS/2 reference documentation for both (Procedures Language
-2/REXX Reference and Object REXX Reference), the `ADDRESS` instruction's
-own syntax diagram in *both* is just `ADDRESS [environment]
-[expression]`, no `WITH` clause of any kind. Neither ever had *any*
-form of `ADDRESS WITH`, `USING` included; the whole I/O redirection
-clause is an enhancement neither IBM product picked up.
-To supply empty stdin (preventing a child process from blocking
-waiting for input), define an empty stem and pass it as `INPUT STEM`:
-
-```rexx
-noIn.0 = 0
-address system cmd with output stem out. error stem err. input stem noIn.
-```
-
-Do not wrap the command itself in `cmd /c "..."` on Windows, even
-though it may seem like it should be needed — `ADDRESS SYSTEM`
-already dispatches straight to the platform's native shell. An extra
-`cmd /c` layer is redundant at best, and actively wrong once the
-wrapped command itself contains its own quoted arguments (a path with
-spaces, a commit message with spaces): `cmd.exe`'s quote parser does
-not reliably handle the resulting nested quoting.
-
-### <a id="environmental-factors"></a>Environmental factors
-
-REXX does not shield you from the underlying environment; in writing
-a REXX program you must understand the behavior of your operating
-system and user interface if you want to avoid nasty surprises. As an
-example, if you invoke a REXX program in an OS/2 CMD file and scan
-the argument looking for the string `/Q`, you will not find it,
-because `CMD.EXE` will have taken the string `/Q` to be a "quiet"
-option and removed it.
-
-If you must use binary or hexadecimal constants for character data,
-be aware that character encoding varies among systems, and not just
-between EBCDIC and ASCII. CMS and TSO use EBCDIC. Most other systems
-use some combination of plain 7-bit ASCII, an 8-bit code page
-extending ASCII (e.g. Latin-1, Windows-1252 — the specific extension
-matters, since they disagree above code point 127), and Unicode
-(typically UTF-8 or UTF-16) — which one depends on the specific
-system, its locale/code-page configuration, and the file or stream in
-question, not just the OS family. Even within CMS and TSO there are
-national-language issues, and in many systems there are code-page
-issues. Be aware of the character sets used in each of your target
-systems, and program accordingly. Segregate system-dependent values
-and code-page-dependent values to make your code easier to maintain.
-
-Rexx variable names and labels are case-insensitive on every
-platform, in every dialect — but two related things are not, and the
-platform matters:
-
-- Filenames on Windows (NTFS) or ArcaOS/OS2 (JFS) may be
-  case-insensitive in practice, but should still be treated as
-  case-sensitive in code that must also run on Linux.
-- The `VALUE()` built-in for reading environment variables is
-  case-sensitive on Linux but case-insensitive on Windows.
-
-**ooRexx note**: for case-insensitive comparisons generally, not just
-the platform-specific cases above, ooRexx's `.String` class provides a
-`caseless`-prefixed method family directly — `caselessEquals`,
-`caselessCompare`, `caselessPos`, `caselessCountStr`,
-`caselessChangeStr`, `caselessAbbrev`, `caselessMatch`,
-`caselessStartsWith`/`caselessEndsWith`, `caselessWordPos`,
-`caselessContains`/`caselessContainsWord` — rather than calling
-`TRANSLATE()`/`~upper` on both sides before every comparison. `PARSE`
-itself has a `CASELESS` modifier too (alongside `LOWER`) for
-case-independent template matching — but unlike `PARSE UPPER`, which
-is genuine ANSI X3.274-1996 syntax (spelled out in full; the standard
-documents no abbreviated form for it), neither `LOWER` nor `CASELESS`
-appears anywhere in the ANSI text: both are extensions, present in
-ooRexx and Regina alike but absent from TRL-2-level classic Rexx and
-from the ANSI standard itself.
-
-### <a id="io-model"></a>I/O model
-
-REXX's first shipped implementation, on CMS in VM/SP Release 3, used
-the `EXECIO` command, later inherited by TSO/E and other platforms.
-CMS's `EXECIO` reads and writes through three kinds of source or
-target — the program stack (`FIFO`/`LIFO`), a stem (`STEM stem.`), or
-a single plain variable (`VAR name`, but only for exactly one line at
-a time; the count operand must be `1` with `VAR`) — the source for a
-write, the target for a read. Of these, TSO/E REXX in MVS inherited
-only a subset: the stack and `STEM` forms, not `VAR`. Some
-interpreters still support `EXECIO` for compatibility with legacy
-TSO/CMS code, but it is not the primary I/O model outside TSO/E and
-CMS themselves.
-
-Stream I/O came later. It's part of the language as defined in
-Cowlishaw's TRL-2 (1990) and later formalized by ANSI X3.274-1996.
-`LINEIN(file)`/`LINEOUT(file, string)` read and write whole lines;
-`CHARIN(file)`/`CHAROUT(file, string)` do the same character by
-character; `LINES(file)` and `CHARS(file)` report whether more data
-remain, for use as a loop condition before the next read;
-`STREAM(file, option)` queries or acts on a stream — `'State'` reports
-its overall status, `'Description'` a fuller status string, `'Command'`
-executes an operation on it. See Figure 10.
-
-#### Figure 10: I/O examples
-
-```rexx
-/* In OS/2 SAA REXX */
-do while lines(myfile) /= 0
-   myline = linein(myfile)
-   ...
-   end
-
-/* In CMS and TSO REXX */
-'EXECIO *' name '(STEM MYSTEM. FINIS'
-do i = 1 to mystem.0
-   parse var mystem.i myline
-   ...
-   end
-```
-
-TSO/E REXX in MVS does not support stream I/O at all, except in the
-UNIX System Services subsystem (originally called OpenEdition, or
-Open MVS); code that must run in environments supporting stream I/O
-and also in, e.g., TSO, can use conditional logic to select `EXECIO`
-on the TSO side (see [PARSE SOURCE and VERSION](#parse-source-and-version)
-below for how to detect which side you're on).
-
-**ooRexx note**: I/O object types. Alongside the bare functions above,
-ooRexx models stream I/O as a small class family: `.Stream` is the
-concrete class most code uses, wrapping a file or other stream as an
-object — `aStream~lines`, `aStream~chars`, `aStream~linein`,
-`aStream~lineout`, `aStream~charin`, `aStream~charout`, and so on,
-with identical semantics (the same `0`-or-`1`-vs-exact-count behavior
-included) as their function-call equivalents. `.InputStream`,
-`.OutputStream`, and `.InputOutputStream` are abstract mixin classes
-underneath it, meant for building custom stream implementations, not
-for direct use on an ordinary file.
-
-The safest thing is to encapsulate your input/output code and then
-take advantage of whatever facilities may exist in each target
-system, e.g., `EXECIO` with the `STEM` option, or a third-party
-library such as REXXLIB. Any such code should be thoroughly
-documented. Be aware that `EXECIO` in TSO/E supports only the stem
-and stack forms, not the variable-name form; even in CMS, it is
-usually best to use the stem form of `EXECIO`.
-
-### <a id="parse-source-and-version"></a>PARSE SOURCE and VERSION
-
-The `PARSE SOURCE` statement allows your code to determine the
-operating system and file from which it was invoked, as well as the
-type of invocation. You can take advantage of this in order to
-maintain a single version of a REXX program for two different
-systems, to detect inappropriate invocations, to select character
-encoding, etc. If you have data files that, by default, should be in
-the same directory as your code, you can use this statement to locate
-them. See Figure 11.
-
-The `PARSE VERSION` statement allows you to determine the language
-level of REXX that your program has available. This allows you to
-write code that exploits new features of REXX, yet include alternate
-code that will be used when running on an older platform.
-
-#### Figure 11: PARSE SOURCE and PARSE VERSION examples
-
-```rexx
-parse source system invocation origin
-
-select
-   when system = 'OS/2' then do
-     ...
-     end
-   when system = 'TSO' then do
-     ...
-     end
-   otherwise do
-     say system 'is not supported by' origin
-     exit
-     end
-   end
-
-parse version name level date1 date2 date3 .
-select
-   when name = 'REXXSAA' then do
-      parse var level int '.' frac
-      if int > 3 then do
-         /* fast code for SAA level 4 goes here */
-         end
-      else do
-         /* slower code for older SAA level goes here */
-         end
-      end
-   when name = 'REXX370' then do
-      /* Code for CMS or TSO level of REXX goes here */
-      end
-   otherwise do
-      say name 'is an unsupported REXX implementation'
-      exit
-   end
-   end
-```
-
-**ooRexx note**: the classic `REXXSAA`/`REXX370` name values above are
-platform-specific classic-Rexx implementation names; ooRexx reports
-neither.
-
-```
-parse version v
-say v
-```
-
-on ooRexx 5.2.0 produces:
-
-```
-REXX-ooRexx_5.2.0(MT)_64-bit 6.06 18 Apr 2026
-```
-
-If your `SELECT` on `PARSE VERSION`'s `name` field needs to
-distinguish ooRexx from classic implementations, match on a `name`
-that begins with `REXX-ooRexx`, e.g., `when name~abbrev('REXX-ooRexx')
-then do ... end` — do not assume `name` will be one of the two classic
-values above. The two classic values themselves are also not the
-whole story — the full set of `name`/`level` values you may actually
-meet:
-
-| Implementation | `name` | `level` | Source |
-|---|---|---|---|
-| OS/2 classic REXX (Procedures Language 2/REXX) | `REXXSAA` | `4.00` | IBM's own reference manual |
-| OREXX (IBM's Object REXX) | `OBJREXX` | `6.00` | IBM's own reference manual (OS/2 edition) |
-| CMS / TSO/E REXX (classic mainframe, "REXX370") | `REXX370` | `4.00` | Widely documented |
-| Regina | `REXX-Regina_<version>` (e.g. `REXX-Regina_3.9.6(MT)`) | `5.00` | Regina's own reference manual; ANSI-compliant since Regina 3.1 |
-| ooRexx | `REXX-ooRexx_<version>(MT)_<bits>-bit` (e.g. `REXX-ooRexx_5.2.0(MT)_64-bit`) | `6.06` | ooRexx 5.2.0 |
-
-Two things worth noticing in this table. First, `level` is *not* the
-interpreter's own version number — it is the Rexx *language level* the
-interpreter targets (`4.00` is TRL-2, `5.00` is ANSI X3.274-1996), and
-several implementations have historically conflated the two; look for
-the interpreter's own version inside the `name` word instead (as
-ooRexx and Regina both do) or in `PARSE SOURCE`. Second, `REXXSAA` and
-`REXX370` share the exact same `level`, `4.00` — despite one being a
-PC/workstation implementation and the other a mainframe one — because
-neither was ever brought up to the ANSI-1996 level; see
-[Platforms and standards conformance](#platforms-and-standards) above.
-
-### <a id="function-library-availability"></a>Availability of optional function libraries
-
-Do not assume that an optional function library your code depends on
-is actually loaded in every environment it might run in. The original
-form of this advice, in both source papers, was framed around a
-specific and by-2023 obsolete scenario: OS/2's RexxUtil requires
-Presentation Manager, which was too large to fit on a 1.44MB emergency
-boot floppy, so code meant to run from one had to avoid depending on
-RexxUtil and fall back to a more primitive equivalent — one route
-being `BOOTOS2` to build a bootable maintenance partition or emergency
-floppy still capable of loading RexxUtil, WPS, or PM sessions on a
-minimum boot configuration. See Figure 12.
-
-#### Figure 12: Function-library availability check
-
-```rexx
-if REXXUTIL_loaded then do
-   stat = SysFileTree(filespec, 'filelist.', 'FSO')
-   do i = 1 to filespec.0
-      ...
-      end
-   end
-else do
-   'DIR' filespec '/F /O > WORK_FILE'
-   ...
-   end
-```
-
-The emergency-boot-floppy scenario itself is long obsolete, but the
-underlying principle is not: any function library your code treats as
-"just there" — RexxUtil, an ooRexx package pulled in via `::REQUIRES`,
-a third-party library like REXXLIB — may genuinely not be loaded in
-every environment your code might run in, and checking before you
-depend on it is cheap insurance.
-
-The modern equivalent check before using a RexxUtil function —
-standard across classic Rexx and ooRexx alike, not an ooRexx-only
-mechanism — is `RxFuncQuery`, and the standard way to load the package
-at all (needed at least once per process, since it's not autoloaded
-the way some built-ins are) is:
-
-```rexx
-call RxFuncAdd 'SysLoadFuncs', 'RexxUtil', 'SysLoadFuncs'
-call SysLoadFuncs
-```
-
-running this unconditionally at the top of a script is the practical,
-idiomatic equivalent of Figure 12's availability check for the common
-case where you'd rather just load the package than branch on whether
-it's there — reach for the explicit `RxFuncQuery` branch only when a
-genuine no-RexxUtil fallback path exists, the way the original boot-disk
-scenario needed one.
-
-**Loading the package is not the same as every function in it being
-present.** The repertoire behind the name `RexxUtil` is not itself
-standardized, and varies by implementation:
-
-| Function(s) | OREXX | ooRexx 5.2.0 | Regina (`RegUtil`) |
-|---|---|---|---|
-| `SysFileCopy`, `SysFileMove` | No (Windows edition) | Yes | No — `SysCopyObject`/`SysMoveObject` instead |
-| The `SysIsFileXxx` family (`SysIsFile`, `SysIsFileDirectory`, `SysIsFileLink`, and the Windows-only detail variants) | No | Yes | No |
-| The Workplace-Shell family (`SysCreateObject`, `SysDestroyObject`, `SysSetObjectData`, `SysQueryClassList`, and related) | Yes, but only in the OS/2 edition | No | No |
-| The semaphore family (`SysCreateEventSem`, `SysCreateMutexSem`, and related) | Yes | Yes, but deprecated in favor of the `.EventSemaphore`/`.MutexSemaphore` classes | Yes |
-| Unix process functions (`SysFork`, `SysWait`, `SysCreatePipe`) and `SysGetMessage`/`SysGetMessageX` (Unix message catalogs) | Yes, in the AIX edition | Yes, on Unix-like platforms | No |
-| `SysWinGetPrinters`, `SysWinGetDefaultPrinter`, `SysWinSetDefaultPrinter`, `SysFormatMessage`, `SysGetLongPathName`, `SysGetShortPathName`, `SysShutdownSystem` | No | Yes | No |
-| `SysLoadFuncs`/`SysDropFuncs` | Required, to register the package | Deprecated no-ops since ooRexx 4.0.0 — the package is auto-registered | Required, to register the package |
-
-Ordinary file/directory operations (`SysFileTree`, `SysMkDir`,
-`SysRmDir`, `SysSearchPath`, `SysTempFileName`, `SysGetFileDateTime`,
-`SysSetFileDateTime`, `SysDriveInfo`, `SysDriveMap`, `SysVolumeLabel`,
-`SysWaitNamedPipe`), the macro-space family, console I/O (`SysCls`,
-`SysGetKey`, `RxMessageBox`, and related — Windows-only in all three),
-and `SysQueryProcess` are present in all three; `SysFileTree` and
-`SysQueryProcess` are each documented as behaving differently across
-platforms, so test them on each target rather than assuming identical
-semantics.
-
-A blanket "is RexxUtil loaded?" check, whether via Figure 12's flag or
-`RxFuncQuery('SysLoadFuncs')`, only tells you the package itself
-loaded — it says nothing about whether the *specific* function you're
-about to call is part of that implementation's repertoire. Guard any
-WPS-specific (or otherwise platform-specific) call with its own
-`RxFuncQuery` on that function's own name, not just on the package.
-
-### <a id="variable-patterns"></a>Variable patterns
-
-If you use variable patterns in the templates of your `PARSE`
-statements, be aware that some extremely old implementations of REXX
-do not support all forms — e.g., in MVS/XA the form `+(variable)` is
-not available. If you need to run on multiple platforms, check which
-forms are supported on each and program accordingly.
 
 ---
 
