@@ -957,12 +957,13 @@ documented for that context are listed; a blank cell means none:
 |---|---|---|
 | OS/2 command prompt (classic REXX) | `CMD` | |
 | PC-DOS command prompt (classic REXX) | `COMMAND` | |
-| Windows/OS/2 command prompt (OREXX, ooRexx) | `CMD` | `SYSTEM`, `PATH` on ooRexx |
+| Command prompt (OREXX, ooRexx) | `CMD` | `SYSTEM`, `PATH` on ooRexx |
 | Regina command prompt | `SYSTEM` | `COMMAND`, `REXX` |
 | TSO/E READY | `TSO` | `MVS`, `CONSOLE`†, the link/attach family, the APPC family |
 | ISPF on z/OS | `TSO` | `MVS`, `CONSOLE`†, the link/attach family, the APPC family, `ISPEXEC` |
 | ISPF/PDF EDIT on z/OS | `TSO` | `MVS`, `CONSOLE`†, the link/attach family, the APPC family, `ISPEXEC`, `ISREDIT` |
-| ISPF on z/VM | `CMS` | `ISPEXEC`; `ISREDIT` in an edit macro |
+| ISPF on z/VM | `CMS` | `ISPEXEC` |
+| ISPF/PDF EDIT on z/VM | `CMS` | `ISPEXEC`, `ISREDIT` |
 | OMVS shell | `SH` | `TSO`, `MVS`, `SYSCALL` |
 | `IRXJCL` | `MVS` | the link/attach family, the APPC family |
 | System REXX | `MVS` (`TSO=NO`) | the link/attach family, `APPCMVS`, `BCPii`, the APPC family; `TSO=YES` adds `TSO`, `ISPEXEC`, `ISREDIT` |
@@ -981,64 +982,7 @@ REXX exec in *any* address space, TSO/E or not. The APPC family:
 SNA LU 6.2) — likewise available in any MVS address space. † `CONSOLE`
 needs an active extended MCS console session (started with the TSO/E
 `CONSOLE` command) and console command authority; it's available only
-in the TSO/E address space, not from batch.
-
-`EDIT` and `TEST` work by a genuinely different mechanism than
-`ISPEXEC`/`ISREDIT`, not just a variant of the same one: they are
-*not* entries in the SUBCOM host command environment table at all —
-absent from it in the TSO/E REXX Reference across every edition from
-1988 through the current (2021) one. Their own `EXEC` subcommand's
-documentation, in the TSO/E Command Reference, states the actual
-mechanism directly: inside a CLIST or exec launched that way, non-REXX
-clauses go to `EDIT`/`TEST` subcommands, and `TSO` commands are flatly
-unavailable until you terminate the facility. The practical effect is
-default-like, but it's an invocation-time restriction on what a bare
-clause can reach, not a registered, `ADDRESS`-selectable environment
-the way every other row in this table is. `IPCS` genuinely is such an
-environment, much like `ISPEXEC`: `ADDRESS IPCS` changes the host
-command environment to `IPCS`, available only when the exec runs from
-an IPCS session — but an IPCS session itself has more than one
-internal mode, and `ADDRESS IPCS` support is explicit per mode: it
-works in IPCS mode (the session's normal operating mode) and during a
-trap stop, but the *z/OS MVS IPCS User's Guide* states plainly that
-"No ADDRESS IPCS support is intended" for the session's own separate
-TSO/E mode, where ordinary TSO commands and CLISTs run instead.
-
-Sourcing: the OS/2-family, PC-DOS, ooRexx, and Regina rows rest on
-each implementation's own reference manual — the PC-DOS row on IBM's
-own PC DOS 7 REXX Reference, distinct from the third-party Personal
-REXX (Quercus Systems) also available for DOS. The TSO-family rows
-(READY, ISPF-on-z/OS, batch) come from IBM's TSO Extensions Version 2
-REXX Reference / TSO/E REXX Reference, across three editions
-(SC28-1883-0, 1988; SC28-1883-4, 1991; the current z/OS 2.5 edition,
-SA32-0972-50, 2021). The earliest of the three documents a noticeably
-smaller SUBCOM environment table, missing `CONSOLE`, the
-APPC family, and the `LINKMVS`/`LINKPGM`/`ATTCHMVS`/`ATTCHPGM` forms
-entirely — a real difference between TSO/E releases, not an error in
-any edition — while the 1991 and current editions agree word for word
-on the fuller list reflected above, unchanged across 30 years. The
-`EDIT`/`TEST` rows come from the *TSO/E Command Reference*
-(SC28-1969), a separate manual from the REXX Reference, in each
-command's own `EXEC` subcommand documentation. The `IPCS` row comes
-from the *z/OS MVS IPCS User's Guide* (SA23-1384), also a separate
-manual, in its own "ADDRESS IPCS Instruction" and "Modes of IPCS
-Operation" topics. The REXX Reference documents ISPF's environment
-list from TSO/E's own side; the ISPF Dialog
-Developer's Guide does not independently confirm this list, so the
-ISPF-on-z/OS rows reflect TSO/E's documentation of ISPF, not ISPF's
-own. ISPF-on-z/VM is inferred by the same pattern as ISPF-on-z/OS
-(default unchanged from the underlying platform; `ISPEXEC`/`ISREDIT`
-added), since no VM-specific ISPF manual confirms it independently.
-CMS, GCS, and XEDIT come from IBM's z/VM REXX/VM Reference; the
-currently-maintained z/VM 7.4.0 online documentation states the same
-facts in the same words, in its "Environment," "z/VM REXX/VM
-Interpreter in the GCS Environment," and "Entering Commands to GCS"
-topics. OMVS from IBM's z/OS Using REXX and z/OS UNIX System Services
-(a manual distinct from the TSO/E REXX Reference). System REXX comes from IBM's System
-REXX documentation — `APPCMVS` and `BCPii` do not appear anywhere in
-the TSO/E REXX Reference, so they appear to be genuinely specific to
-System REXX rather than shared with the general TSO/E environment set
-the way the link/attach and APPC families are. `ISREDIT` requires an
+in the TSO/E address space, not from batch. `ISREDIT` requires an
 active edit session regardless of platform — attempting it outside one
 fails at run time even where the environment is nominally available.
 GCS's REXX also drops the `selector` third argument to `VALUE()`
