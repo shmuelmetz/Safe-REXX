@@ -775,7 +775,11 @@ Note the numbering: this starts at tail `"0"`, not `"1"` — `~items`
 counts from zero, unlike the classic convention where tail `0` is
 reserved for a manually-maintained counter and data starts at `1`.
 The two schemes are not interchangeable; pick one and stay consistent
-within a given stem.
+within a given stem. `orphans.[orphans.~items+1] = value` gets you the
+classic 1-based numbering instead — but this still relies on the same
+discipline as the 0-based form: every tail has to come from this exact
+idiom, with nothing added or removed out of band, or the numbering
+silently stops meaning what you think it means.
 
 **A Stem's tails are not guaranteed to be contiguous, or even
 numeric, in general.** A Stem is a string-indexed map, not an array —
@@ -795,11 +799,13 @@ end
 ```
 
 If what's actually wanted is array-style append — add an element and
-let the collection work out the next position itself — a real
-`.Array` and its own `~append` method do that directly.
-`orphans.[orphans.~items] = value` only imitates the effect, for a
-Stem built consistently this way; it is not itself an append
-operation.
+let the collection work out the next position itself, in either
+numbering — a real `.Array` and its own `~append` method do that
+directly, with none of the discipline the `~items`/`~items+1` idioms
+above depend on. `orphans.[orphans.~items] = value` only imitates the
+effect, for a Stem built consistently one way or the other; it is not
+itself an append operation. Unless the data genuinely needs a Stem's
+string-keyed lookup, prefer the array.
 
 **ooRexx note**: `.stem~new` creates a fresh, otherwise-anonymous Stem
 object, and it is a **genuinely different object** from the Stem
