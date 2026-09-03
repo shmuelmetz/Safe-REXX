@@ -1158,16 +1158,25 @@ ooRexx.
 
 ### <a id="io-model"></a>I/O model
 
-The I/O model in REXX is based on the file system in the CMS
-component of IBM's VM/SP. Most other systems, e.g., DOS, Linux, OS/2,
-Windows, do not have an orientation towards line numbers. TSO/E in
-MVS does not support the REXX I/O model at all; it uses a subset of
-`EXECIO`. For this reason, the `CHARS` and `LINES` functions on those
-non-CMS systems only return values of 0 and 1. See Figure 10. Code
-that expects an exact number of characters or lines from those
-functions may fail on those systems, and an implementation that
-*did* return exact numbers on, e.g., Linux, could be horribly
-inefficient.
+The I/O model described in the original two source papers — line
+oriented, based on the file system in the CMS component of IBM's
+VM/SP, contrasted against systems with no orientation towards line
+numbers — reflects a 1993–95 reality (revised 1998) that predates
+ANSI Rexx (1996) entirely; those papers never addressed the stream
+I/O it standardized. As of this edition, full stream I/O (`LINEIN`,
+`LINEOUT`, `STREAM`, and `LINES`/`CHARS` returning accurate counts) is
+the norm everywhere except z/OS's TSO/E and OS/2 — the two
+environments the rest of this section is actually about. TSO/E in MVS
+does not support the REXX I/O model at all outside the OMVS shell; it
+uses a subset of `EXECIO` instead. OS/2's classic Rexx keeps the
+older, more limited model below: its `CHARS` and `LINES` functions
+return only 0 or 1, not exact counts. See Figure 10. Code that
+expects an exact number of characters or lines from those functions
+may fail in either environment, and an implementation that *did*
+return exact numbers there could be horribly inefficient. Some
+interpreters still support `EXECIO` for compatibility with legacy
+TSO/CMS code, but outside TSO/E and CMS themselves it is no longer the
+primary I/O model.
 
 #### Figure 10: I/O examples
 
