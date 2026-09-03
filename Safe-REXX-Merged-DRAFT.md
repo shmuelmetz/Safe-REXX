@@ -793,10 +793,13 @@ orphans.n = value`).
 > removed out of band, or the numbering silently stops meaning what
 > you think it means.
 >
-> A Stem is fundamentally a string-indexed map; it only behaves like a
-> simulated array when every tail is a contiguous integer, and nothing
-> stops a program from setting `orphans.foo` or `orphans.17` directly
-> alongside the sequence above. Don't use `~items` as a loop bound
+> A Stem is an associative array — a string-indexed map — which is not
+> the same thing as an array, even when every tail happens to be a
+> contiguous integer: that's a simulated, conventional usage built on
+> top of a fundamentally different structure, the way a flight
+> simulator imitates flying without being an airplane. Nothing stops a
+> program from setting `orphans.foo` or `orphans.17` directly alongside
+> the sequence above. Don't use `~items` as a loop bound
 > (`do i = 1 to orphans.~items`) except in the narrow case where every
 > tail was built by exactly this idiom and none was added or removed
 > out of band. The general, safe way to visit every populated tail is
@@ -1022,9 +1025,9 @@ documented for that context are listed; a blank cell means none:
 | OMVS shell | `SH` | `TSO`, `MVS`, `SYSCALL` |
 | `IRXJCL` | `MVS` | the link/attach family, the APPC family |
 | System REXX | `MVS` (`TSO=NO`) | the link/attach family, `APPCMVS`, `BCPii`, the APPC family; `TSO=YES` adds `TSO`, `ISPEXEC`, `ISREDIT` |
-| An exec run via TSO `EDIT`'s own `EXEC` subcommand | `EDIT` subcommands | none — `TSO` itself is unavailable until `END` terminates `EDIT` |
-| An exec run via TSO `TEST`'s own `EXEC` subcommand | `TEST` subcommands | none — `TSO` itself is unavailable until `END` or `RUN` terminates `TEST` |
-| An exec run in an active IPCS session, IPCS mode | `TSO` | `IPCS` — not available at all in the session's own separate TSO/E mode |
+| EDIT macro | `EDIT` | none — `TSO` itself is unavailable until `END` terminates `EDIT` |
+| TEST macro | `TEST` | none — `TSO` itself is unavailable until `END` or `RUN` terminates `TEST` |
+| IPCS macro | `TSO` | `IPCS` — not available at all in the session's own separate TSO/E mode |
 | CMS command line | `CMS` | `COMMAND`, `CP` |
 | GCS | `GCS` | `COMMAND` |
 | XEDIT macro | `XEDIT` | falls through to `CMS`, then `CP`, automatically |
@@ -1118,13 +1121,18 @@ because `CMD.EXE` will have taken the string `/Q` to be a "quiet"
 option and removed it.
 
 If you must use binary or hexadecimal constants for character data,
-be aware that character encoding varies among systems. CMS and TSO
-use EBCDIC; most other systems, e.g., OS/2, Linux, Windows, use
-ASCII. Even within CMS and TSO there are national-language issues,
-and in many systems there are code-page issues. Be aware of the
-character sets used in each of your target systems, and program
-accordingly. Segregate system-dependent values and code-page-dependent
-values to make your code easier to maintain.
+be aware that character encoding varies among systems, and not just
+between EBCDIC and ASCII. CMS and TSO use EBCDIC. Most other systems
+use some combination of plain 7-bit ASCII, an 8-bit code page
+extending ASCII (e.g. Latin-1, Windows-1252 — the specific extension
+matters, since they disagree above code point 127), and Unicode
+(typically UTF-8 or UTF-16) — which one depends on the specific
+system, its locale/code-page configuration, and the file or stream in
+question, not just the OS family. Even within CMS and TSO there are
+national-language issues, and in many systems there are code-page
+issues. Be aware of the character sets used in each of your target
+systems, and program accordingly. Segregate system-dependent values
+and code-page-dependent values to make your code easier to maintain.
 
 Rexx variable names and labels are case-insensitive on every
 platform, in every dialect — but two related things are not, and the
@@ -1135,6 +1143,18 @@ platform matters:
   case-sensitive in code that must also run on Linux.
 - The `VALUE()` built-in for reading environment variables is
   case-sensitive on Linux but case-insensitive on Windows.
+
+**ooRexx note**: for case-insensitive comparisons generally, not just
+the platform-specific cases above, ooRexx's `.String` class provides a
+`caseless`-prefixed method family directly — `caselessEquals`,
+`caselessCompare`, `caselessPos`, `caselessCountStr`,
+`caselessChangeStr`, `caselessAbbrev`, `caselessMatch`,
+`caselessStartsWith`/`caselessEndsWith`, `caselessWordPos`,
+`caselessContains`/`caselessContainsWord` — rather than calling
+`TRANSLATE()`/`~upper` on both sides before every comparison. `PARSE`
+itself has a `CASELESS` modifier too (alongside `UPPER`/`LOWER`) for
+case-independent template matching, standard across classic Rexx and
+ooRexx.
 
 ### <a id="io-model"></a>I/O model
 
