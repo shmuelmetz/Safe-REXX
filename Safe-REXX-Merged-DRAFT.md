@@ -624,16 +624,23 @@ leads to several possible types of undetected errors.
 **ooRexx note**: ooRexx's plain variables are exactly as untyped as
 classic Rexx's — this doesn't change what's above. Its *objects* are
 a different matter: ooRexx has dynamic typing at the object level.
-Every object knows its own class, and sending it a message that class
-doesn't define is a real, enforced error — the `Error 97.1`/"does not
-understand message" pattern seen throughout this document — not
-silent misbehavior. It's late-bound (checked when the message is
-sent, not before the program runs) rather than static, but it is
-genuine type enforcement, absent some low-level but documented
-escape hatch: a class can define an `UNKNOWN` method to deliberately
-accept and handle any message that would otherwise be rejected,
-receiving the message name and its argument list. That's an opt-in
-mechanism a class author has to write, not a gap in the checking.
+Sending an object a message it doesn't recognize is a real, enforced
+error — the `Error 97.1`/"does not understand message" pattern seen
+throughout this document — not silent misbehavior. It's late-bound
+(checked when the message is sent, not before the program runs)
+rather than static, but it is genuine type enforcement, absent a
+couple of low-level but documented escape hatches. ("Recognizes,"
+not "the class defines," is deliberate above — see the second point
+below.) A class can define an `UNKNOWN` method to deliberately accept
+and handle any message that would otherwise be rejected, receiving
+the message name and its argument list. Separately, an individual
+*object's* own recognized-message set isn't fixed by its class alone:
+a method can be attached to one specific instance at run time (via
+`~setMethod`, callable only from that object's own code, or
+`Class~enhanced` at creation time), so two objects of the identical
+class can end up recognizing different messages. Both are opt-in
+mechanisms a program has to invoke deliberately, not a gap in the
+checking.
 
 When you assign a value to a variable, there is no check that the
 value is consistent with the intended type. If your logic requires
@@ -751,10 +758,12 @@ orphans.n = value`).
 
 **ooRexx note**: a stem's own item count sidesteps maintaining a
 manual counter tail altogether — `orphans.` is always a genuine Stem
-object (as established above), and `~items` reports how many of its
-compound variables are currently set, updating itself as a side
-effect of each assignment, with nothing for the program to track by
-hand:
+object (as established above), and `~items` is a read-only query
+reporting how many of its compound variables are currently set.
+`~items` itself does not add, remove, or change anything — it's the
+tail *assignment* that changes the count; `~items` only reports
+whatever that count happens to be at the moment you call it, with
+nothing for the program to track by hand:
 
 ```ooRexx
 orphans.[orphans.~items] = 'first'   -- items was 0; sets tail "0"
@@ -766,15 +775,31 @@ Note the numbering: this starts at tail `"0"`, not `"1"` — `~items`
 counts from zero, unlike the classic convention where tail `0` is
 reserved for a manually-maintained counter and data starts at `1`.
 The two schemes are not interchangeable; pick one and stay consistent
-within a given stem. `~allIndexes` returns every tail actually
-populated, in no particular order — useful for iterating a stem built
-this way without assuming a contiguous numeric range:
+within a given stem.
+
+**A Stem's tails are not guaranteed to be contiguous, or even
+numeric, in general.** A Stem is a string-indexed map, not an array —
+nothing stops a program from setting `orphans.foo` or `orphans.17`
+directly alongside the sequence above. Don't use `~items` as a loop
+bound (`do i = 1 to orphans.~items`) except in the narrow case where
+every tail was built by exactly this idiom and none was added or
+removed out of band. The general, safe way to visit every populated
+tail is `do tail over orphans.~allIndexes` (the tail names) or
+`do value over orphans.~allItems` (the values directly, when the tail
+names themselves don't matter):
 
 ```ooRexx
 do tail over orphans.~allIndexes
     say tail':' orphans.[tail]
 end
 ```
+
+If what's actually wanted is array-style append — add an element and
+let the collection work out the next position itself — a real
+`.Array` and its own `~append` method do that directly.
+`orphans.[orphans.~items] = value` only imitates the effect, for a
+Stem built consistently this way; it is not itself an append
+operation.
 
 **ooRexx note**: `.stem~new` creates a fresh, otherwise-anonymous Stem
 object, and it is a **genuinely different object** from the Stem
