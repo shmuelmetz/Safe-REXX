@@ -1177,9 +1177,12 @@ these, TSO/E REXX in MVS inherited only a subset: the stack and `STEM`
 forms, not `VAR`.
 
 Stream I/O (`LINEIN`, `LINEOUT`, `LINES`, `CHARS`) came later — absent
-from VM/SP's own Interpreter Reference through Release 5 (1986), and
-documented as standard by the time of Cowlishaw's TRL-2 (1990) and
-later ANSI X3.274-1996. What isn't guaranteed, once stream I/O is
+from VM/SP's own Interpreter Reference through Release 5 (1986). It's
+part of the language as defined in Cowlishaw's TRL-2 (1990) and later
+formalized by ANSI X3.274-1996 — both are language specifications, not
+descriptions of any particular product's implementation, so neither
+pins down when a given interpreter actually added it. What isn't
+guaranteed, once stream I/O is
 available at all, is that `CHARS()` or `LINES()` return an exact
 count: ANSI Rexx explicitly permits either one to report only whether
 at least one more character or line is available (`0` or `1`) instead
