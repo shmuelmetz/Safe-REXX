@@ -1166,9 +1166,9 @@ from the ANSI standard itself.
 
 ### <a id="io-model"></a>I/O model
 
-The original implementation of REX on CMS used the `EXECIO` command,
-later inherited by TSO/E and other platforms. CMS's `EXECIO` reads and
-writes through three kinds of
+REXX's first shipped implementation, on CMS in VM/SP Release 3, used
+the `EXECIO` command, later inherited by TSO/E and other platforms.
+CMS's `EXECIO` reads and writes through three kinds of
 destination — the program stack (`FIFO`/`LIFO`), a stem (`STEM
 stem.`), or a single plain variable (`VAR name`, but only for exactly
 one line at a time; the count operand must be `1` with `VAR`). Of
