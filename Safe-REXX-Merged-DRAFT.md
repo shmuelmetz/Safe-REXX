@@ -775,11 +775,19 @@ Note the numbering: this starts at tail `"0"`, not `"1"` — `~items`
 counts from zero, unlike the classic convention where tail `0` is
 reserved for a manually-maintained counter and data starts at `1`.
 The two schemes are not interchangeable; pick one and stay consistent
-within a given stem. `orphans.[orphans.~items+1] = value` gets you the
-classic 1-based numbering instead — but this still relies on the same
-discipline as the 0-based form: every tail has to come from this exact
-idiom, with nothing added or removed out of band, or the numbering
-silently stops meaning what you think it means.
+within a given stem. Add `+1` to get the classic 1-based numbering
+instead:
+
+```ooRexx
+orphans.[orphans.~items+1] = 'first'   -- items was 0; sets tail "1"
+orphans.[orphans.~items+1] = 'second'  -- items is now 1; sets tail "2"
+orphans.[orphans.~items+1] = 'third'   -- items is now 2; sets tail "3"
+```
+
+This still relies on the same discipline as the 0-based form: every
+tail has to come from this exact idiom, with nothing added or removed
+out of band, or the numbering silently stops meaning what you think it
+means.
 
 **A Stem's tails are not guaranteed to be contiguous, or even
 numeric, in general.** A Stem is a string-indexed map, not an array —
