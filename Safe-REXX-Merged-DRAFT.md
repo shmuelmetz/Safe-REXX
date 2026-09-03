@@ -719,8 +719,9 @@ differently:
 say mystem[i]           /* NOT AN ERROR -- and that's the trap: this is
                             a perfectly legitimate character selection,
                             just not the one intended. 'mystem' with no
-                            trailing dot is a plain simple variable,
-                            still dropped, so it evaluates to the
+                            trailing dot is a plain simple variable; it
+                            was never assigned, so it's a dropped
+                            symbol and evaluates to its own name, the
                             string "MYSTEM"; [] on a String correctly
                             selects a character -- "S" (character 3 of
                             "MYSTEM"). Nothing here is wrong except the
@@ -756,80 +757,83 @@ The safe pattern here too: copy the index into a plain simple
 variable first, then use that variable as the tail (`n = orphans.0;
 orphans.n = value`).
 
-**ooRexx note**: a stem's own item count sidesteps maintaining a
-manual counter tail altogether — `orphans.` is always a genuine Stem
-object (as established above), and `~items` is a read-only query
-reporting how many of its compound variables are currently set.
-`~items` itself does not add, remove, or change anything — it's the
-tail *assignment* that changes the count; `~items` only reports
-whatever that count happens to be at the moment you call it, with
-nothing for the program to track by hand:
-
-```ooRexx
-orphans.[orphans.~items] = 'first'   -- items was 0; sets tail "0"
-orphans.[orphans.~items] = 'second'  -- items is now 1; sets tail "1"
-orphans.[orphans.~items] = 'third'   -- items is now 2; sets tail "2"
-```
-
-The stem starts out empty, with `~items` equal to `0` — so the very
-first element written this way lands in tail `"0"`, not tail `"1"`:
-the bracket expression evaluates `~items` first, *then* the assignment
-runs and is what makes that tail exist, bumping the count for next
-time.
-
-This differs from the classic convention, where tail `0` is reserved
-for a manually-maintained counter and data starts at `1`. The two
-schemes are not interchangeable; pick one and stay consistent within a
-given stem. Add `+1` to get the classic 1-based numbering instead:
-
-```ooRexx
-orphans.[orphans.~items+1] = 'first'   -- items was 0; sets tail "1"
-orphans.[orphans.~items+1] = 'second'  -- items is now 1; sets tail "2"
-orphans.[orphans.~items+1] = 'third'   -- items is now 2; sets tail "3"
-```
-
-This still relies on the same discipline as the 0-based form: every
-tail has to come from this exact idiom, with nothing added or removed
-out of band, or the numbering silently stops meaning what you think it
-means.
-
-**A Stem's tails are not guaranteed to be contiguous, or even
-numeric, in general.** A Stem is a string-indexed map, not an array —
-nothing stops a program from setting `orphans.foo` or `orphans.17`
-directly alongside the sequence above. Don't use `~items` as a loop
-bound (`do i = 1 to orphans.~items`) except in the narrow case where
-every tail was built by exactly this idiom and none was added or
-removed out of band. The general, safe way to visit every populated
-tail is `do tail over orphans.~allIndexes` (the tail names) or
-`do value over orphans.~allItems` (the values directly, when the tail
-names themselves don't matter):
-
-```ooRexx
-do tail over orphans.~allIndexes
-    say tail':' orphans.[tail]
-end
-```
-
-If what's actually wanted is array-style append — add an element and
-let the collection work out the next position itself, in either
-numbering — a real `.Array` and its own `~append` method do that
-directly, with none of the discipline the `~items`/`~items+1` idioms
-above depend on. `orphans.[orphans.~items] = value` only imitates the
-effect, for a Stem built consistently one way or the other; it is not
-itself an append operation. An `.Array` also comes with `~first`/
-`~last` (the index of the first/last item, or `.nil` if empty) and
-`~firstItem`/`~lastItem` (the item itself) — reading the ends of the
-collection this way needs no bracket arithmetic and no assumption
-about how it was populated, unlike reaching for tail `"0"` or
-`orphans.~items - 1` on a Stem. Unless the data genuinely needs a
-Stem's string-keyed lookup, prefer the array.
+> **ooRexx note**: a stem's own item count sidesteps maintaining a
+> manual counter tail altogether — `orphans.` is always a genuine Stem
+> object (as established above), and `~items` is a read-only query
+> reporting how many of its compound variables are currently set.
+> `~items` itself does not add, remove, or change anything — it's the
+> tail *assignment* that changes the count; `~items` only reports
+> whatever that count happens to be at the moment you call it, with
+> nothing for the program to track by hand:
+>
+> ```ooRexx
+> orphans.[orphans.~items] = 'first'   -- items was 0; sets tail "0"
+> orphans.[orphans.~items] = 'second'  -- items is now 1; sets tail "1"
+> orphans.[orphans.~items] = 'third'   -- items is now 2; sets tail "2"
+> ```
+>
+> The stem starts out empty, with `~items` equal to `0` — so the very
+> first element written this way lands in tail `"0"`, not tail `"1"`:
+> the bracket expression evaluates `~items` first, *then* the
+> assignment runs and is what makes that tail exist, bumping the count
+> for next time. This differs from the classic convention, where tail
+> `0` is reserved for a manually-maintained counter and data start at
+> `1`. The two schemes are not interchangeable; pick one and stay
+> consistent within a given stem. Add `+1` to get the classic 1-based
+> numbering instead:
+>
+> ```ooRexx
+> orphans.[orphans.~items+1] = 'first'   -- items was 0; sets tail "1"
+> orphans.[orphans.~items+1] = 'second'  -- items is now 1; sets tail "2"
+> orphans.[orphans.~items+1] = 'third'   -- items is now 2; sets tail "3"
+> ```
+>
+> This still relies on the same discipline as the 0-based form: every
+> tail has to come from this exact idiom, with nothing added or
+> removed out of band, or the numbering silently stops meaning what
+> you think it means.
+>
+> A Stem is fundamentally a string-indexed map; it only behaves like a
+> simulated array when every tail is a contiguous integer, and nothing
+> stops a program from setting `orphans.foo` or `orphans.17` directly
+> alongside the sequence above. Don't use `~items` as a loop bound
+> (`do i = 1 to orphans.~items`) except in the narrow case where every
+> tail was built by exactly this idiom and none was added or removed
+> out of band. The general, safe way to visit every populated tail is
+> `do tail over orphans.~allIndexes` (the tail names) or `do value over
+> orphans.~allItems` (the values directly, when the tail names
+> themselves don't matter):
+>
+> ```ooRexx
+> do tail over orphans.~allIndexes
+>     say tail':' orphans.[tail]
+> end
+> ```
+>
+> If what's actually wanted is array-style append — add an element and
+> let the collection work out the next position itself — a real
+> `.Array` and its own `~append` method do that directly, with none of
+> the discipline the `~items`/`~items+1` idioms above depend on.
+> `orphans.[orphans.~items] = value` only imitates the effect, for a
+> Stem built consistently one way or the other; it is not itself an
+> append operation. An `.Array` also comes with `~first`/`~last` (the
+> index of the first/last item, or `.nil` if empty) and
+> `~firstItem`/`~lastItem` (the item itself) — reading the ends of the
+> collection this way needs no bracket arithmetic and no assumption
+> about how it was populated, unlike reaching for tail `"0"` or
+> `orphans.~items - 1` on a Stem. Unless the data genuinely needs a
+> Stem's string-keyed lookup, prefer the array.
 
 **ooRexx note**: `.stem~new` creates a fresh, otherwise-anonymous Stem
 object, and it is a **genuinely different object** from the Stem
 object automatically bound to a compound-variable stem of the same
 name — assigning the new object to a variable doesn't connect the two,
 even though both are ordinary Stem objects and both support the same
-bracket notation:
+bracket notation. `realStem` (no trailing dot) and `realStem.`
+(trailing dot, no tail) have always been different variables, even in
+classic Rexx with no ooRexx involved at all; what's new here is only
+that `realStem.` is bound to a genuine Stem *object*, not just a plain
+default value:
 
 ```ooRexx
 realStem = .stem~new
@@ -849,7 +853,7 @@ characters used as a name... [symbols] are used to name variables,
 functions, etc.") from the *variable* it may or may not currently
 name. A symbol that has never had a value assigned to it — what's
 often called "uninitialized" informally — has no variable behind it
-yet at all; the standard's own term for this state is *dropped*
+yet; the standard's own term for this state is *dropped*
 (§3.1.16: "a symbol which is in an uninitialized state, as opposed to
 having had a value assigned to it, is described as dropped"). When you
 refer to a dropped symbol, its value is by default its own name in
@@ -1018,8 +1022,8 @@ documented for that context are listed; a blank cell means none:
 | OMVS shell | `SH` | `TSO`, `MVS`, `SYSCALL` |
 | `IRXJCL` | `MVS` | the link/attach family, the APPC family |
 | System REXX | `MVS` (`TSO=NO`) | the link/attach family, `APPCMVS`, `BCPii`, the APPC family; `TSO=YES` adds `TSO`, `ISPEXEC`, `ISREDIT` |
-| A CLIST or exec run via TSO `EDIT`'s own `EXEC` subcommand | `EDIT` subcommands | none — `TSO` itself is unavailable until `END` terminates `EDIT` |
-| A CLIST or exec run via TSO `TEST`'s own `EXEC` subcommand | `TEST` subcommands | none — `TSO` itself is unavailable until `END` or `RUN` terminates `TEST` |
+| An exec run via TSO `EDIT`'s own `EXEC` subcommand | `EDIT` subcommands | none — `TSO` itself is unavailable until `END` terminates `EDIT` |
+| An exec run via TSO `TEST`'s own `EXEC` subcommand | `TEST` subcommands | none — `TSO` itself is unavailable until `END` or `RUN` terminates `TEST` |
 | An exec run in an active IPCS session, IPCS mode | `TSO` | `IPCS` — not available at all in the session's own separate TSO/E mode |
 | CMS command line | `CMS` | `COMMAND`, `CP` |
 | GCS | `GCS` | `COMMAND` |
