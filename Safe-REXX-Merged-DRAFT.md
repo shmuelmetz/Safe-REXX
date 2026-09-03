@@ -17,6 +17,9 @@ and dialects in current use: TSO/E REXX (the only REXX on z/OS,
 running under TSO, ISPF, the OMVS shell, batch, and System REXX), CMS,
 Classic REXX, Object REXX, ooRexx, Regina.
 
+The current source of this document, including its revision history,
+is maintained at <https://github.com/shmuelmetz/Safe-REXX>.
+
 Copyright 1993, 1998, 2023, 2026 by Shmuel (Seymour J.) Metz
 (שמואל בן ל״ביש). All rights
 reserved. Permission for reproduction in whole or in part is hereby
