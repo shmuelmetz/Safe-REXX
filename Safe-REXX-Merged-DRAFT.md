@@ -1029,9 +1029,12 @@ ISPF-on-z/OS rows reflect TSO/E's documentation of ISPF, not ISPF's
 own. ISPF-on-z/VM is inferred by the same pattern as ISPF-on-z/OS
 (default unchanged from the underlying platform; `ISPEXEC`/`ISREDIT`
 added), since no VM-specific ISPF manual confirms it independently.
-CMS, GCS, and XEDIT come from IBM's z/VM REXX/VM Reference; OMVS from
-IBM's z/OS Using REXX and z/OS UNIX System Services (a manual distinct
-from the TSO/E REXX Reference). System REXX comes from IBM's System
+CMS, GCS, and XEDIT come from IBM's z/VM REXX/VM Reference; the
+currently-maintained z/VM 7.4.0 online documentation states the same
+facts in the same words, in its "Environment," "z/VM REXX/VM
+Interpreter in the GCS Environment," and "Entering Commands to GCS"
+topics. OMVS from IBM's z/OS Using REXX and z/OS UNIX System Services
+(a manual distinct from the TSO/E REXX Reference). System REXX comes from IBM's System
 REXX documentation — `APPCMVS` and `BCPii` do not appear anywhere in
 the TSO/E REXX Reference, so they appear to be genuinely specific to
 System REXX rather than shared with the general TSO/E environment set
