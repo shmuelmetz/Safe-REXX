@@ -46,6 +46,7 @@ permission is prohibited.
    - [Type and range checking](#type-and-range-checking)
    - [Dropped symbols used as constants](#dropped-symbols)
    - [Variable references](#variable-references)
+   - [I/O portability](#io-pitfalls)
 3. [Compatibility and environmental considerations](#compatibility)
    - [ADDRESS and the default environment](#address)
    - [Environmental factors](#environmental-factors)
@@ -992,6 +993,72 @@ address system 'some-command'
 cmdRc = rc                /* CORRECT -- a host command sets rc */
 ```
 
+### <a id="io-pitfalls"></a>I/O portability
+
+**Don't assume `CHARS()`/`LINES()` give an exact count.** ANSI Rexx
+permits either to report only `0` or `1` (more data available, or
+not) instead of a real number, and which one is exact, if either, is
+a per-implementation choice, not a platform split — CMS's `LINES()`
+is exact for disk files but its `CHARS()` never is; ooRexx's
+`CHARS()` is exact for disk files but its own `LINES()` isn't:
+
+```rexx
+/* WRONG -- assumes lines() gives an exact count */
+do lines(myfile)
+   myline = linein(myfile)
+   ...
+   end
+/* on a target where lines() isn't exact for this stream, this would
+   only read one line */
+
+/* CORRECT -- portable regardless of whether lines() is exact */
+do while lines(myfile) /= 0
+   myline = linein(myfile)
+   ...
+   end
+```
+
+Check your specific target's documented behavior rather than assuming
+portability. `LINES(file) = 0` (or `CHARS(file) = 0` for
+character-mode reads) is a reliable, portable end-of-file test
+regardless of whether the count is exact. What is *not* reliable, in
+any dialect, is using `STREAM(file,"State")` and checking for
+`"NOTREADY"` — that state can also result from an I/O error or other
+condition, not just end-of-file, and you only see it after already
+reading past the end.
+
+**`LINEOUT` opens in append mode by default; a full-file overwrite
+needs an explicit replace first.** This is standard Rexx behavior, not
+an ooRexx quirk, and a real bug pattern, not a hypothetical: a script
+that deletes a file and then writes it fresh with repeated `LINEOUT`
+calls will silently duplicate content the moment the delete step ever
+fails (a locked file, a permission issue), because `LINEOUT` doesn't
+know the delete was supposed to have happened:
+
+```rexx
+/* WRONG -- if the delete silently fails, this appends instead of
+   replacing, duplicating old content underneath the new */
+call SysFileDelete path
+call lineout path, newContent
+
+/* CORRECT -- explicit replace, independent of whether a prior
+   delete succeeded */
+call stream path, 'C', 'OPEN WRITE REPLACE'
+call lineout path, newContent
+call stream path, 'C', 'CLOSE'
+```
+
+ooRexx also offers stream *methods* on a `.Stream` object as an
+alternative to the classic built-in functions above, preferred in new
+ooRexx code:
+
+```ooRexx
+s = .Stream~new(path)
+s~command('OPEN WRITE REPLACE')
+s~lineout(newContent)
+s~close()
+```
+
 ---
 
 ## <a id="compatibility"></a>Compatibility and environmental considerations
@@ -1184,19 +1251,13 @@ Cowlishaw's TRL-2 (1990) and later formalized by ANSI X3.274-1996.
 `CHARIN(file)`/`CHAROUT(file, string)` do the same character by
 character; `LINES(file)` and `CHARS(file)` report whether more data
 remain, for use as a loop condition before the next read;
-`STREAM(file, 'State')` reports the stream's overall status. See
-Figure 10.
+`STREAM(file, option)` queries or acts on a stream — `'State'` reports
+its overall status, `'Description'` a fuller status string, `'Command'`
+executes an operation on it. See Figure 10.
 
 #### Figure 10: I/O examples
 
 ```rexx
-/* In standard REXX */
-do lines(myfile)
-   myline = linein(myfile)
-   ...
-   end
-/* In OS/2 this would only read one line ! */
-
 /* In OS/2 SAA REXX */
 do while lines(myfile) /= 0
    myline = linein(myfile)
@@ -1218,24 +1279,6 @@ and also in, e.g., TSO, can use conditional logic to select `EXECIO`
 on the TSO side (see [PARSE SOURCE and VERSION](#parse-source-and-version)
 below for how to detect which side you're on).
 
-**Don't assume `CHARS()`/`LINES()` give an exact count.** ANSI Rexx
-permits either to report only `0` or `1` (more data available, or
-not) instead of a real number. Which one is exact, if either, is a
-per-implementation choice, not a platform split: CMS's `LINES()` is
-exact for disk files but its `CHARS()` never is; ooRexx's `CHARS()` is
-exact for disk files but its own `LINES()` isn't. Check your specific
-target's documented behavior rather than assuming portability.
-
-A `CHARS()`/`LINES()` that only ever returns `0` or `1` is not the
-same thing as having no way to detect end-of-file: `LINES(file) = 0`
-(or `CHARS(file) = 0` for character-mode reads) is a reliable,
-portable end-of-file test regardless, and the OS/2 SAA REXX idiom in
-Figure 10 above already relies on it. What is *not* reliable, in any
-dialect, is using `STREAM(file,"State")` and checking for
-`"NOTREADY"` — that state can also result from an I/O error or other
-condition, not just end-of-file, and you only see it after already
-reading past the end.
-
 **ooRexx note**: I/O object types. Alongside the bare functions above,
 ooRexx models stream I/O as a small class family: `.Stream` is the
 concrete class most code uses, wrapping a file or other stream as an
@@ -1254,39 +1297,6 @@ library such as REXXLIB. Any such code should be thoroughly
 documented. Be aware that `EXECIO` in TSO/E supports only the stem
 and stack forms, not the variable-name form; even in CMS, it is
 usually best to use the stem form of `EXECIO`.
-
-**`LINEOUT` opens in append mode by default; a full-file overwrite
-needs an explicit replace first.** This is standard Rexx behavior, not
-an ooRexx quirk, and a real bug pattern, not a hypothetical: a script
-that deletes a file and then writes it fresh with repeated `LINEOUT`
-calls will silently duplicate
-content the moment the delete step ever fails (a locked file, a
-permission issue), because `LINEOUT` doesn't know the delete was
-supposed to have happened:
-
-```rexx
-/* WRONG -- if the delete silently fails, this appends instead of
-   replacing, duplicating old content underneath the new */
-call SysFileDelete path
-call lineout path, newContent
-
-/* CORRECT -- explicit replace, independent of whether a prior
-   delete succeeded */
-call stream path, 'C', 'OPEN WRITE REPLACE'
-call lineout path, newContent
-call stream path, 'C', 'CLOSE'
-```
-
-ooRexx also offers stream *methods* on a `.Stream` object as an
-alternative to the classic built-in functions above, preferred in new
-ooRexx code:
-
-```ooRexx
-s = .Stream~new(path)
-s~command('OPEN WRITE REPLACE')
-s~lineout(newContent)
-s~close()
-```
 
 ### <a id="parse-source-and-version"></a>PARSE SOURCE and VERSION
 
