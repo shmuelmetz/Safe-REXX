@@ -771,12 +771,16 @@ orphans.[orphans.~items] = 'second'  -- items is now 1; sets tail "1"
 orphans.[orphans.~items] = 'third'   -- items is now 2; sets tail "2"
 ```
 
-Note the numbering: this starts at tail `"0"`, not `"1"` — `~items`
-counts from zero, unlike the classic convention where tail `0` is
-reserved for a manually-maintained counter and data starts at `1`.
-The two schemes are not interchangeable; pick one and stay consistent
-within a given stem. Add `+1` to get the classic 1-based numbering
-instead:
+The stem starts out empty, with `~items` equal to `0` — so the very
+first element written this way lands in tail `"0"`, not tail `"1"`:
+the bracket expression evaluates `~items` first, *then* the assignment
+runs and is what makes that tail exist, bumping the count for next
+time.
+
+This differs from the classic convention, where tail `0` is reserved
+for a manually-maintained counter and data starts at `1`. The two
+schemes are not interchangeable; pick one and stay consistent within a
+given stem. Add `+1` to get the classic 1-based numbering instead:
 
 ```ooRexx
 orphans.[orphans.~items+1] = 'first'   -- items was 0; sets tail "1"
@@ -812,8 +816,13 @@ numbering — a real `.Array` and its own `~append` method do that
 directly, with none of the discipline the `~items`/`~items+1` idioms
 above depend on. `orphans.[orphans.~items] = value` only imitates the
 effect, for a Stem built consistently one way or the other; it is not
-itself an append operation. Unless the data genuinely needs a Stem's
-string-keyed lookup, prefer the array.
+itself an append operation. An `.Array` also comes with `~first`/
+`~last` (the index of the first/last item, or `.nil` if empty) and
+`~firstItem`/`~lastItem` (the item itself) — reading the ends of the
+collection this way needs no bracket arithmetic and no assumption
+about how it was populated, unlike reaching for tail `"0"` or
+`orphans.~items - 1` on a Stem. Unless the data genuinely needs a
+Stem's string-keyed lookup, prefer the array.
 
 **ooRexx note**: `.stem~new` creates a fresh, otherwise-anonymous Stem
 object, and it is a **genuinely different object** from the Stem
