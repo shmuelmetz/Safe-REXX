@@ -966,6 +966,8 @@ documented for that context are listed; a blank cell means none:
 | OMVS shell | `SH` | `TSO`, `MVS`, `SYSCALL` |
 | `IRXJCL` | `MVS` | the link/attach family, the APPC family |
 | System REXX | `MVS` (`TSO=NO`) | the link/attach family, `APPCMVS`, `BCPii`, the APPC family; `TSO=YES` adds `TSO`, `ISPEXEC`, `ISREDIT` |
+| A CLIST or exec run via TSO `EDIT`'s own `EXEC` subcommand | `EDIT` subcommands | none — `TSO` itself is unavailable until `END` terminates `EDIT` |
+| A CLIST or exec run via TSO `TEST`'s own `EXEC` subcommand | `TEST` subcommands | none — `TSO` itself is unavailable until `END` or `RUN` terminates `TEST` |
 | CMS command line | `CMS` | `COMMAND`, `CP` |
 | GCS | `GCS` | `COMMAND` |
 | XEDIT macro | `XEDIT` | falls through to `CMS`, then `CP`, automatically |
@@ -980,28 +982,40 @@ needs an active extended MCS console session (started with the TSO/E
 `CONSOLE` command) and console command authority; it's available only
 in the TSO/E address space, not from batch.
 
-The TSO-family rows above are still not the complete list of
-environments reachable from TSO — any TSO-hosted facility can register
-its own additional host command environment for as long as it's
-running, the same way ISPF adds `ISPEXEC`/`ISREDIT`. The native TSO
-`EDIT` and `TEST` facilities add their own (`EDIT`, `TEST`) the same
-way; `IPCS` does too, while analyzing a dump — none of the three
-appears in the TSO/E REXX Reference itself, so they aren't included in
-the table above pending a primary source.
+`EDIT` and `TEST` work by a genuinely different mechanism than
+`ISPEXEC`/`ISREDIT`, not just a variant of the same one: they are
+*not* entries in the SUBCOM host command environment table at all —
+absent from it in the TSO/E REXX Reference across every edition from
+1988 through the current (2021) one. Their own `EXEC` subcommand's
+documentation, in the TSO/E Command Reference, states the actual
+mechanism directly: inside a CLIST or exec launched that way, non-REXX
+clauses go to `EDIT`/`TEST` subcommands, and `TSO` commands are flatly
+unavailable until you terminate the facility. The practical effect is
+default-like, but it's an invocation-time restriction on what a bare
+clause can reach, not a registered, `ADDRESS`-selectable environment
+the way every other row in this table is. `IPCS` remains an open
+question — secondary sources describe it similarly to `ISPEXEC` (a
+real environment, available only inside an IPCS session), but every
+IPCS User's Guide URL found lives on `ibm.com/docs`, which returns 403
+here, so it isn't in this table pending a primary source.
 
 Sourcing: the OS/2-family, PC-DOS, ooRexx, and Regina rows rest on
 each implementation's own reference manual — the PC-DOS row on IBM's
 own PC DOS 7 REXX Reference, distinct from the third-party Personal
 REXX (Quercus Systems) also available for DOS. The TSO-family rows
-(READY,
-ISPF-on-z/OS, batch) come from IBM's TSO Extensions Version 2 REXX
-Reference. Its host command environment table grew between editions —
-SC28-1883-0 (1988) documents a noticeably smaller set, missing
-`CONSOLE`, the APPC family, and the `LINKMVS`/`LINKPGM`/`ATTCHMVS`/
-`ATTCHPGM` forms entirely, while SC28-1883-4 (1991) documents the
-fuller list reflected above; this is a real difference between TSO/E
-releases, not an error in either edition. It documents
-ISPF's environment list from TSO/E's own side; the ISPF Dialog
+(READY, ISPF-on-z/OS, batch) come from IBM's TSO Extensions Version 2
+REXX Reference / TSO/E REXX Reference, across three editions
+(SC28-1883-0, 1988; SC28-1883-4, 1991; the current z/OS 2.5 edition,
+SA32-0972-50, 2021). The earliest of the three documents a noticeably
+smaller SUBCOM environment table, missing `CONSOLE`, the
+APPC family, and the `LINKMVS`/`LINKPGM`/`ATTCHMVS`/`ATTCHPGM` forms
+entirely — a real difference between TSO/E releases, not an error in
+any edition — while the 1991 and current editions agree word for word
+on the fuller list reflected above, unchanged across 30 years. The
+`EDIT`/`TEST` rows come from the *TSO/E Command Reference*
+(SC28-1969), a separate manual from the REXX Reference, in each
+command's own `EXEC` subcommand documentation. The REXX Reference
+documents ISPF's environment list from TSO/E's own side; the ISPF Dialog
 Developer's Guide does not independently confirm this list, so the
 ISPF-on-z/OS rows reflect TSO/E's documentation of ISPF, not ISPF's
 own. ISPF-on-z/VM is inferred by the same pattern as ISPF-on-z/OS
@@ -1544,9 +1558,10 @@ directly by the author.
 - PC DOS 7 REXX User's Guide and Reference, IBM Corp., S83G-9228 (IBM's own REXX bundled with PC DOS 7, distinct from the third-party Personal REXX by Quercus Systems)
 - SAA Common Programming Interface Procedures Language Reference, SC26-4358
 - Object REXX Reference, IBM Corp. (the OS/2 edition of the manual for OREXX, IBM's cross-platform Object REXX for OS/2, Windows, and AIX, and the precursor to ooRexx)
-- TSO Extensions Version 2 REXX Reference, SC28-1883 (two editions consulted: SC28-1883-0, December 1988, and SC28-1883-4, August 1991 — the host command environment table grew noticeably between them, so the later edition is the one relied on for that table)
+- TSO Extensions Version 2 REXX Reference / z/OS TSO/E REXX Reference, SC28-1883 / SA32-0972 (three editions consulted: SC28-1883-0, December 1988; SC28-1883-4, August 1991; and the current z/OS 2.5 edition, SA32-0972-50, 2021 — the earliest documents a noticeably smaller host command environment table than the other two, which agree word for word)
 - TSO Extensions Version 2 REXX User's Guide, SC28-1882
-- ISPF Dialog Developer's Guide and Reference, IBM Corp., SC34-4821 (does not independently state the REXX host command environment list for ISPF; see the TSO Extensions Version 2 REXX Reference above for that)
+- TSO/E Command Reference, IBM Corp., SC28-1969 (documents `EDIT` and `TEST` as TSO commands, including the specific `EXEC` subcommand behavior each imposes on a REXX exec it launches — a separate manual from the REXX Reference above, which does not cover either command)
+- ISPF Dialog Developer's Guide and Reference, IBM Corp., SC34-4821 (does not independently state the REXX host command environment list for ISPF; see the TSO/E REXX Reference above for that)
 - z/OS Using REXX and z/OS UNIX System Services, IBM Corp., SA23-2283 (documents TSO/E REXX's behavior in the OMVS shell separately from the TSO/E REXX Reference above)
 - z/VM REXX/VM Reference, IBM Corp., SC24-6314
 - The REXX Language: A Practical Approach to Programming, 2nd Edition. By Michael F. Cowlishaw (Prentice-Hall, Inc., a division of Simon & Schuster), Englewood Cliffs, New Jersey 07632, ISBN 0-13-780651-5
