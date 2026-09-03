@@ -1168,37 +1168,43 @@ from the ANSI standard itself.
 
 REXX's first shipped implementation, on CMS in VM/SP Release 3, used
 the `EXECIO` command, later inherited by TSO/E and other platforms.
-CMS's `EXECIO` reads and writes through three kinds of
-destination — the program stack (`FIFO`/`LIFO`), a stem (`STEM
-stem.`), or a single plain variable (`VAR name`, but only for exactly
-one line at a time; the count operand must be `1` with `VAR`). Of
-these, TSO/E REXX in MVS inherited only a subset: the stack and `STEM`
-forms, not `VAR`.
+CMS's `EXECIO` reads and writes through three kinds of source or
+target — the program stack (`FIFO`/`LIFO`), a stem (`STEM stem.`), or
+a single plain variable (`VAR name`, but only for exactly one line at
+a time; the count operand must be `1` with `VAR`) — the source for a
+write, the target for a read. Of these, TSO/E REXX in MVS inherited
+only a subset: the stack and `STEM` forms, not `VAR`.
 
 Stream I/O (`LINEIN`, `LINEOUT`, `LINES`, `CHARS`) came later. It's
 part of the language as defined in Cowlishaw's TRL-2 (1990) and later
 formalized by ANSI X3.274-1996 — both are language specifications, not
 descriptions of any particular product's implementation, so neither
-pins down when a given interpreter actually added it. What isn't
-guaranteed, once stream I/O is
-available at all, is that `CHARS()` or `LINES()` return an exact
-count: ANSI Rexx explicitly permits either one to report only whether
-at least one more character or line is available (`0` or `1`) instead
-of a real count. Which one actually returns an exact count, for which
-kind of stream, is a per-implementation, per-function choice, not a
-clean split by platform: on CMS, `LINES()` returns an exact count for
-disk files but `CHARS()` never does, even for files; on ooRexx,
-`CHARS()` returns an exact count for disk files but its own `LINES()`
-returns only `0` or `1`. TSO/E REXX in MVS does not support stream I/O
-at all outside the UNIX System Services (OMVS) subsystem, where full
-stream I/O is available. OS/2's classic Rexx has stream I/O functions
-too, but both `CHARS()` and `LINES()` return only `0` or `1` there,
-for every kind of stream. See Figure 10. Code that relies on an exact
-count from either function should be checked against that specific
-target's own documented behavior — never assumed portable, and an
-implementation that *did* return an exact count where none was
-expected could be horribly inefficient. Some interpreters still
-support `EXECIO` for compatibility with legacy TSO/CMS code, but it is
+pins down when a given interpreter actually added it.
+
+`LINEIN(file)` reads the next line from `file`; `LINEOUT(file,
+string)` writes a line to it. `LINES(file)` and `CHARS(file)` report
+whether more data remains, for use as a loop condition before the next
+read. TSO/E REXX in MVS does not support stream I/O at all outside the
+UNIX System Services (OMVS) subsystem, where full stream I/O is
+available.
+
+What isn't guaranteed, once stream I/O is available at all, is that
+`CHARS()` or `LINES()` return an exact count rather than just `0` or
+`1`: ANSI Rexx explicitly permits either one to report only whether at
+least one more character or line is available, instead of a real
+count. Which one actually returns an exact count, for which kind of
+stream, is a per-implementation, per-function choice, not a clean
+split by platform: on CMS, `LINES()` returns an exact count for disk
+files but `CHARS()` never does, even for files; on ooRexx, `CHARS()`
+returns an exact count for disk files but its own `LINES()` returns
+only `0` or `1`. OS/2's classic Rexx has stream I/O functions too, but
+both `CHARS()` and `LINES()` return only `0` or `1` there, for every
+kind of stream. See Figure 10. Code that relies on an exact count from
+either function should be checked against that specific target's own
+documented behavior — never assumed portable, and an implementation
+that *did* return an exact count where none was expected could be
+horribly inefficient. Some interpreters still support `EXECIO` for
+compatibility with legacy TSO/CMS code, but it is
 not the primary I/O model outside TSO/E and CMS themselves.
 
 #### Figure 10: I/O examples
