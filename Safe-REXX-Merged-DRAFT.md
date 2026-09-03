@@ -1513,7 +1513,7 @@ direct experience with REXX in CMS (VM/SP), DOS (Personal REXX), MVS
 (TSO/E), OS/2 (SAA REXX and OREXX/ArcaOS), and, since this merged
 edition, ooRexx on Windows and Linux. Comments on portability to or
 from AREXX or Regina are still welcome, as neither has been used
-directly by the author.
+directly by me.
 
 ---
 
