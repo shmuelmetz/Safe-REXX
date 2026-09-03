@@ -1330,22 +1330,27 @@ scenario needed one.
 
 **Loading the package is not the same as every function in it being
 present.** The repertoire behind the name `RexxUtil` is not itself
-standardized, and varies by implementation. IBM's own OS/2 reference
-documentation, for both classic Rexx and OREXX, documents the full
-Workplace-Shell-specific set — `SysCreateObject`, `SysDestroyObject`,
-`SysSetObjectData`, `SysQueryClassList`, and the like — the original
-repertoire on OS/2 itself, where the Workplace Shell these functions
-manipulate actually exists. Later implementations trim it down:
-ordinary file/system functions such as `SysFileTree`, `SysMkDir`, and
-`SysTempFileName` are part of the common core, present in both ooRexx
-(via `RxFuncQuery` after `SysLoadFuncs`, ooRexx 5.2.0) and Regina's
-`RegUtil` package (per its own reference manual). The
-Workplace-Shell-specific functions are a different story: `RxFuncQuery`
-reports all four as **not** registered in ooRexx 5.2.0, and none of
-the four appears anywhere in RegUtil's reference manual either —
-neither reimplements the OS/2-shell-specific portion of the original
-repertoire, only the platform-independent core that still makes sense
-on a platform without a Workplace Shell.
+standardized, and varies by implementation:
+
+| Function(s) | OREXX | ooRexx 5.2.0 | Regina (`RegUtil`) |
+|---|---|---|---|
+| `SysFileCopy`, `SysFileMove` | No (Windows edition) | Yes | No — `SysCopyObject`/`SysMoveObject` instead |
+| The `SysIsFileXxx` family (`SysIsFile`, `SysIsFileDirectory`, `SysIsFileLink`, and the Windows-only detail variants) | No | Yes | No |
+| The Workplace-Shell family (`SysCreateObject`, `SysDestroyObject`, `SysSetObjectData`, `SysQueryClassList`, and related) | Yes, but only in the OS/2 edition | No | No |
+| The semaphore family (`SysCreateEventSem`, `SysCreateMutexSem`, and related) | Yes | Yes, but deprecated in favor of the `.EventSemaphore`/`.MutexSemaphore` classes | Yes |
+| Unix process functions (`SysFork`, `SysWait`, `SysCreatePipe`) and `SysGetMessage`/`SysGetMessageX` (Unix message catalogs) | Yes, in the AIX edition | Yes, on Unix-like platforms | No |
+| `SysWinGetPrinters`, `SysWinGetDefaultPrinter`, `SysWinSetDefaultPrinter`, `SysFormatMessage`, `SysGetLongPathName`, `SysGetShortPathName`, `SysShutdownSystem` | No | Yes | No |
+| `SysLoadFuncs`/`SysDropFuncs` | Required, to register the package | Deprecated no-ops since ooRexx 4.0.0 — the package is auto-registered | Required, to register the package |
+
+Ordinary file/directory operations (`SysFileTree`, `SysMkDir`,
+`SysRmDir`, `SysSearchPath`, `SysTempFileName`, `SysGetFileDateTime`,
+`SysSetFileDateTime`, `SysDriveInfo`, `SysDriveMap`, `SysVolumeLabel`,
+`SysWaitNamedPipe`), the macro-space family, console I/O (`SysCls`,
+`SysGetKey`, `RxMessageBox`, and related — Windows-only in all three),
+and `SysQueryProcess` are present in all three; `SysFileTree` and
+`SysQueryProcess` are each documented as behaving differently across
+platforms, so test them on each target rather than assuming identical
+semantics.
 
 A blanket "is RexxUtil loaded?" check, whether via Figure 12's flag or
 `RxFuncQuery('SysLoadFuncs')`, only tells you the package itself
@@ -1518,7 +1523,8 @@ directly by the author.
 - OS/2 Procedures Language 2/REXX User's Guide, S10G-6269
 - PC DOS 7 REXX User's Guide and Reference, IBM Corp., S83G-9228 (IBM's own REXX bundled with PC DOS 7, distinct from the third-party Personal REXX by Quercus Systems)
 - SAA Common Programming Interface Procedures Language Reference, SC26-4358
-- Object REXX Reference, IBM Corp. (the OS/2 edition of the manual for OREXX, IBM's cross-platform Object REXX for OS/2, Windows, and AIX, and the precursor to ooRexx)
+- Object REXX Reference, IBM Corp. (the OS/2 edition of the manual for OREXX, IBM's cross-platform Object REXX for OS/2, Windows, and AIX, and the precursor to ooRexx); also consulted directly: Object REXX for Windows Reference, Version 2.1, SH12-6725-00, and Object REXX for AIX Reference, Version 1.1.3, SH12-6386-01 — the RexxUtil repertoire differs by edition, notably the Workplace-Shell-specific functions (OS/2 only) and the Unix process functions (AIX only)
+- Regina REXX RegUtil Reference (the RexxUtil-equivalent package bundled with Regina), <https://regina-rexx.sourceforge.io/>
 - TSO Extensions Version 2 REXX Reference / z/OS TSO/E REXX Reference, SC28-1883 / SA32-0972 (three editions consulted: SC28-1883-0, December 1988; SC28-1883-4, August 1991; and the current z/OS 2.5 edition, SA32-0972-50, 2021 — the earliest documents a noticeably smaller host command environment table than the other two, which agree word for word)
 - TSO Extensions Version 2 REXX User's Guide, SC28-1882
 - TSO/E Command Reference, IBM Corp., SC28-1969 (documents `EDIT` and `TEST` as TSO commands, including the specific `EXEC` subcommand behavior each imposes on a REXX exec it launches — a separate manual from the REXX Reference above, which does not cover either command)
