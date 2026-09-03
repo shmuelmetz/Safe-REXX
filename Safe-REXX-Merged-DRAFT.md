@@ -1180,21 +1180,11 @@ CMS themselves.
 
 Stream I/O came later. It's part of the language as defined in
 Cowlishaw's TRL-2 (1990) and later formalized by ANSI X3.274-1996.
-`LINEIN(file)` reads the next line from `file`; `LINEOUT(file,
-string)` writes a line to it. `LINES(file)` and `CHARS(file)` report
-whether more data remain — an exact count on some implementations,
-just `0` or `1` on others — for use as a loop condition before the
-next read. TSO/E REXX in MVS does not support stream I/O at all
-outside the UNIX System Services (OMVS) subsystem, where full stream
-I/O is available.
-
-**Don't assume `CHARS()`/`LINES()` give an exact count.** ANSI Rexx
-permits either to report only `0` or `1` (more data available, or
-not) instead of a real number. Which one is exact, if either, is a
-per-implementation choice, not a platform split: CMS's `LINES()` is
-exact for disk files but its `CHARS()` never is; ooRexx's `CHARS()` is
-exact for disk files but its own `LINES()` isn't. Check your specific
-target's documented behavior rather than assuming portability. See
+`LINEIN(file)`/`LINEOUT(file, string)` read and write whole lines;
+`CHARIN(file)`/`CHAROUT(file, string)` do the same character by
+character; `LINES(file)` and `CHARS(file)` report whether more data
+remain, for use as a loop condition before the next read;
+`STREAM(file, 'State')` reports the stream's overall status. See
 Figure 10.
 
 #### Figure 10: I/O examples
@@ -1228,18 +1218,34 @@ and also in, e.g., TSO, can use conditional logic to select `EXECIO`
 on the TSO side (see [PARSE SOURCE and VERSION](#parse-source-and-version)
 below for how to detect which side you're on).
 
+**Don't assume `CHARS()`/`LINES()` give an exact count.** ANSI Rexx
+permits either to report only `0` or `1` (more data available, or
+not) instead of a real number. Which one is exact, if either, is a
+per-implementation choice, not a platform split: CMS's `LINES()` is
+exact for disk files but its `CHARS()` never is; ooRexx's `CHARS()` is
+exact for disk files but its own `LINES()` isn't. Check your specific
+target's documented behavior rather than assuming portability.
+
 A `CHARS()`/`LINES()` that only ever returns `0` or `1` is not the
 same thing as having no way to detect end-of-file: `LINES(file) = 0`
-(or `CHARS(file) = 0` for
-character-mode reads) is a reliable, portable end-of-file test, and
-the OS/2 SAA REXX idiom in Figure 10 above already relies on it. What
-is *not* reliable, in any dialect, is using `STREAM(file,"State")` and
-checking for `"NOTREADY"` — that state can also result from an I/O
-error or other condition, not just end-of-file, and you only see it
-after already reading past the end. ooRexx exposes the same `LINES`/
-`CHARS` test as `.Stream` methods (`aStream~lines`, `aStream~chars`)
-for code written in OO style, with no change in the underlying
-end-of-file semantics.
+(or `CHARS(file) = 0` for character-mode reads) is a reliable,
+portable end-of-file test regardless, and the OS/2 SAA REXX idiom in
+Figure 10 above already relies on it. What is *not* reliable, in any
+dialect, is using `STREAM(file,"State")` and checking for
+`"NOTREADY"` — that state can also result from an I/O error or other
+condition, not just end-of-file, and you only see it after already
+reading past the end.
+
+**ooRexx note**: I/O object types. Alongside the bare functions above,
+ooRexx models stream I/O as a small class family: `.Stream` is the
+concrete class most code uses, wrapping a file or other stream as an
+object — `aStream~lines`, `aStream~chars`, `aStream~linein`,
+`aStream~lineout`, `aStream~charin`, `aStream~charout`, and so on,
+with identical semantics (the same `0`-or-`1`-vs-exact-count behavior
+included) as their function-call equivalents. `.InputStream`,
+`.OutputStream`, and `.InputOutputStream` are abstract mixin classes
+underneath it, meant for building custom stream implementations, not
+for direct use on an ordinary file.
 
 The safest thing is to encapsulate your input/output code and then
 take advantage of whatever facilities may exist in each target
