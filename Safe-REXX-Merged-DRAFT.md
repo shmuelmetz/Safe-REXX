@@ -1167,17 +1167,15 @@ from the ANSI standard itself.
 ### <a id="io-model"></a>I/O model
 
 The original implementation of REX on CMS used the `EXECIO` command,
-later inherited by TSO/E and other platforms; through at least VM/SP
-Release 5 (1986), it was CMS's only file I/O mechanism, alongside the
-program stack. CMS's `EXECIO` reads and writes through three kinds of
+later inherited by TSO/E and other platforms. CMS's `EXECIO` reads and
+writes through three kinds of
 destination — the program stack (`FIFO`/`LIFO`), a stem (`STEM
 stem.`), or a single plain variable (`VAR name`, but only for exactly
 one line at a time; the count operand must be `1` with `VAR`). Of
 these, TSO/E REXX in MVS inherited only a subset: the stack and `STEM`
 forms, not `VAR`.
 
-Stream I/O (`LINEIN`, `LINEOUT`, `LINES`, `CHARS`) came later — absent
-from VM/SP's own Interpreter Reference through Release 5 (1986). It's
+Stream I/O (`LINEIN`, `LINEOUT`, `LINES`, `CHARS`) came later. It's
 part of the language as defined in Cowlishaw's TRL-2 (1990) and later
 formalized by ANSI X3.274-1996 — both are language specifications, not
 descriptions of any particular product's implementation, so neither
