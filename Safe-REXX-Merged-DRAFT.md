@@ -543,9 +543,10 @@ depend on it is cheap insurance.
 
 The modern equivalent check before using a RexxUtil function —
 standard across classic Rexx and ooRexx alike, not an ooRexx-only
-mechanism — is `RxFuncQuery`, and the standard way to load the package
-at all (needed at least once per process, since it's not autoloaded
-the way some built-ins are) is:
+mechanism — is `RxFuncQuery`, and the standard way to load every
+function in the package (one call registers them all; needed at least
+once per process, since none of them is autoloaded the way some
+built-ins are) is:
 
 ```rexx
 call RxFuncAdd 'SysLoadFuncs', 'RexxUtil', 'SysLoadFuncs'
@@ -565,7 +566,7 @@ standardized, and varies by implementation:
 
 | Function(s) | OREXX | ooRexx 5.2.0 | Regina (`RegUtil`) |
 |---|---|---|---|
-| `SysFileCopy`, `SysFileMove` | No (Windows edition) | Yes | No — `SysCopyObject`/`SysMoveObject` instead |
+| `SysFileCopy`, `SysFileMove` | No on Windows; not checked on AIX | Yes | No — `SysCopyObject`/`SysMoveObject` instead |
 | The `SysIsFileXxx` family (`SysIsFile`, `SysIsFileDirectory`, `SysIsFileLink`, and the Windows-only detail variants) | No | Yes | No |
 | The Workplace-Shell family (`SysCreateObject`, `SysDestroyObject`, `SysSetObjectData`, `SysQueryClassList`, and related) | Yes, but only in the OS/2 edition | No | No |
 | The semaphore family (`SysCreateEventSem`, `SysCreateMutexSem`, and related) | Yes | Yes, but deprecated in favor of the `.EventSemaphore`/`.MutexSemaphore` classes | Yes |
