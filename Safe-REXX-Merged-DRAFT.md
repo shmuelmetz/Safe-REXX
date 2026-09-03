@@ -868,7 +868,7 @@ variable pool other than the program's own — `VALUE(name, newvalue,
 Rexx variable, the mechanism behind the `OS2ENVIRONMENT` examples in
 Figure 2 above — something `INTERPRET` has no direct equivalent for at
 all. The third argument is not universal, though: REXX/VM under GCS
-(see [ADDRESS and the default environment](#address) above) does not
+(see [ADDRESS and the default environment](#address) below) does not
 support the `selector` argument at all, only the two-argument form.
 Building a string and running it through `INTERPRET` can achieve the
 same thing, but `INTERPRET` executes whatever Rexx source text it is
@@ -985,8 +985,6 @@ needs an active extended MCS console session (started with the TSO/E
 in the TSO/E address space, not from batch. `ISREDIT` requires an
 active edit session regardless of platform — attempting it outside one
 fails at run time even where the environment is nominally available.
-GCS's REXX also drops the `selector` third argument to `VALUE()`
-entirely — see [Variable references](#variable-references) above.
 
 Standard Rexx (not an ooRexx-only extension) can capture a child
 process's stdout and stderr directly into stems, with no temp files or
@@ -1127,10 +1125,17 @@ and also in, e.g., TSO, can use conditional logic to select `EXECIO`
 on the TSO side (see [PARSE SOURCE and VERSION](#parse-source-and-version)
 below for how to detect which side you're on).
 
-REXX provides no good way to detect end-of-file. You could use
-`STREAM(file,"State")` and check for a value of `"NOTREADY"`, but
-there is no guarantee that end-of-file is the only condition causing
-`NOTREADY`.
+This "only 0 or 1" limitation is not the same thing as having no way
+to detect end-of-file: `LINES(file) = 0` (or `CHARS(file) = 0` for
+character-mode reads) is a reliable, portable end-of-file test, and
+the OS/2 SAA REXX idiom in Figure 10 above already relies on it. What
+is *not* reliable, in any dialect, is using `STREAM(file,"State")` and
+checking for `"NOTREADY"` — that state can also result from an I/O
+error or other condition, not just end-of-file, and you only see it
+after already reading past the end. ooRexx exposes the same `LINES`/
+`CHARS` test as `.Stream` methods (`aStream~lines`, `aStream~chars`)
+for code written in OO style, with no change in the underlying
+end-of-file semantics.
 
 The safest thing is to encapsulate your input/output code and then
 take advantage of whatever facilities may exist in each target
@@ -1444,12 +1449,13 @@ classic-Rexx habit reaches for nested built-in-function calls instead:
 
 ```ooRexx
 /* Classic-Rexx style -- reads inside-out */
-result = translate(substr(str, 1, 5))
-result = strip(space(translate(str)))
+text = translate(substr(str, 1, 5))
+text = strip(space(translate(str)))
 
-/* ooRexx idiom -- reads left-to-right, in actual execution order */
-result = str~substr(1, 5)~translate
-result = str~translate~space~strip
+/* ooRexx idiom -- reads left-to-right, in actual execution order
+   (never name a variable `result` -- see the ooRexx note above) */
+text = str~substr(1, 5)~translate
+text = str~translate~space~strip
 ```
 
 ---
