@@ -93,14 +93,11 @@ original *The Rexx Language* 2nd-edition ("TRL-2") specification —
 among them the `CHANGESTR`, `COUNTSTR`, and `QUALIFY` built-in
 functions and the `LOSTDIGITS` condition. ooRexx and Regina both
 implement these ANSI-1996 enhancements. IBM's mainframe classic-Rexx
-interpreters do not: TSO/E REXX (z/OS) and CMS REXX (z/VM) are both
-documented as lacking `CHANGESTR`/`COUNTSTR`/`QUALIFY` — per
-rexxinfo.org's classic-Rexx function reference chart, which lists
-both mainframe interpreters identically as "not supported" for these,
-rather than treating z/VM as somehow upgraded past z/OS's level.
-Neither mainframe interpreter has been
-brought up to ANSI-1996 level; both remain at essentially the older
-TRL-2 function set. This matters when porting code between
+interpreters do not: TSO/E REXX (z/OS) and CMS REXX (z/VM) both lack
+`CHANGESTR`/`COUNTSTR`/`QUALIFY` — neither mainframe interpreter has
+been brought up to ANSI-1996 level; both remain at essentially the
+older TRL-2 function set, and z/VM is not somehow ahead of z/OS here.
+This matters when porting code between
 mainframe and non-mainframe Rexx: code that leans on `CHANGESTR` or
 `COUNTSTR` for convenience will not run unmodified on TSO/E or CMS,
 regardless of which one you started on.
@@ -276,17 +273,13 @@ Valid I/O redirect types in the `WITH` clause are `NORMAL`, `STEM`,
 stem or stream needed — goes beyond ANSI X3.274-1996's own `ADDRESS
 WITH` semantics, which define only `STREAM` and `STEM` as resource
 types; `NORMAL`/`STEM`/`STREAM` are standard, but `USING` is an ooRexx
-extension (ooRexx 5.2.0). Regina does not have it: its own reference
-manual's `ADDRESS WITH` syntax diagram lists only `STREAM`, `STEM`,
-`LIFO`, and `FIFO` as resource types — `LIFO` and `FIFO` are Regina's
-own extensions beyond the ANSI baseline, but `USING` appears nowhere
-in the manual. Neither classic OS/2 REXX nor OREXX has it either — per
-IBM's own OS/2 reference documentation for both (Procedures Language
-2/REXX Reference and Object REXX Reference), the `ADDRESS` instruction's
-own syntax diagram in *both* is just `ADDRESS [environment]
-[expression]`, no `WITH` clause of any kind. Neither ever had *any*
-form of `ADDRESS WITH`, `USING` included; the whole I/O redirection
-clause is an enhancement neither IBM product picked up.
+extension (ooRexx 5.2.0). Regina does not have it: only `STREAM`,
+`STEM`, `LIFO`, and `FIFO` are valid resource types (`LIFO`/`FIFO` are
+Regina's own extensions beyond the ANSI baseline; `USING` is not among
+them). Neither classic OS/2 REXX nor OREXX has it either — `ADDRESS`
+in both is just `ADDRESS [environment] [expression]`, no `WITH` clause
+of any kind, `USING` included; the whole I/O redirection clause is an
+enhancement neither IBM product picked up.
 To supply empty stdin (preventing a child process from blocking
 waiting for input), define an empty stem and pass it as `INPUT STEM`:
 
@@ -591,9 +584,8 @@ Ordinary file/directory operations (`SysFileTree`, `SysMkDir`,
 `SysWaitNamedPipe`), the macro-space family, console I/O (`SysCls`,
 `SysGetKey`, `RxMessageBox`, and related — Windows-only in all three),
 and `SysQueryProcess` are present in all three; `SysFileTree` and
-`SysQueryProcess` are each documented as behaving differently across
-platforms, so test them on each target rather than assuming identical
-semantics.
+`SysQueryProcess` each behave differently across platforms, so test
+them on each target rather than assuming identical semantics.
 
 A blanket "is RexxUtil loaded?" check, whether via Figure 12's flag or
 `RxFuncQuery('SysLoadFuncs')`, only tells you the package itself
