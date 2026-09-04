@@ -14,7 +14,8 @@ one text, adds explicit ooRexx guidance throughout (both papers
 predate ooRexx and explicitly disclaimed direct experience with
 Object REXX), and extends the scope to the fuller range of platforms
 and dialects in current use: TSO/E REXX (the only REXX on z/OS,
-running under TSO, ISPF, the OMVS shell, batch, and System REXX), CMS,
+running under TSO, ISPF, the OMVS shell, batch (`PGM=IKJEFT01` or
+`PGM=IRXJCL` — different animals, see below), and System REXX), CMS,
 Classic REXX, Object REXX, ooRexx, Regina.
 
 The current source of this document, including its revision history,
@@ -169,7 +170,8 @@ avoiding programming errors.
 Sections marked **ooRexx note** cover behavior specific to Open
 Object Rexx that does not apply to classic Rexx dialects (TSO/E
 REXX — the same interpreter whether run under TSO, ISPF, the OMVS
-shell, batch, or System REXX — CMS REXX, Regina, and the like). Note
+shell, batch (`PGM=IKJEFT01` or `PGM=IRXJCL`), or System REXX — CMS
+REXX, Regina, and the like). Note
 that OREXX (IBM's original Object REXX — released for OS/2, Windows,
 and AIX — the precursor ooRexx implements and succeeds as an
 open-source project) is itself an
@@ -229,7 +231,11 @@ REXX exec in *any* address space, TSO or not. The APPC family:
 SNA LU 6.2) — likewise available in any MVS address space. † `CONSOLE`
 needs an active extended MCS console session (started with the TSO/E
 `CONSOLE` command) and console command authority; it's available only
-in the TSO/E address space, not from batch. `ISREDIT` requires an
+in a genuine TSO/E address space — interactive TSO or batch TSO via
+`PGM=IKJEFT01` — not under `PGM=IRXJCL`, which runs a REXX exec
+directly without establishing TSO/E at all ("batch" alone is
+ambiguous between these two; they are not interchangeable). `ISREDIT`
+requires an
 active edit session regardless of platform — attempting it outside one
 fails at run time even where the environment is nominally available.
 
@@ -497,7 +503,7 @@ meet:
 | Implementation | `name` | `level` | Source |
 |---|---|---|---|
 | OS/2 classic REXX (Procedures Language 2/REXX) | `REXXSAA` | `4.00` | *OS/2 Procedures Language 2/REXX Reference*, S10G-6268 |
-| OREXX (IBM's Object REXX) | `OBJREXX` | `6.00` | *Object REXX Reference* (REXX.INF), OS/2 edition, c. 2001 |
+| OREXX (IBM's Object REXX) | `OBJREXX` | `6.00` | *Object REXX Reference*, OS/2 edition (no separate IBM order number found — shipped as online help, unlike the numbered Windows/AIX editions) |
 | CMS / TSO/E REXX (classic mainframe, "REXX370") | `REXX370` | `4.00` | Widely documented |
 | Regina | `REXX-Regina_<version>` (e.g. `REXX-Regina_3.9.6(MT)`) | `5.00` | Regina's own reference manual; ANSI-compliant since Regina 3.1 |
 | ooRexx | `REXX-ooRexx_<version>(MT)_<bits>-bit` (e.g. `REXX-ooRexx_5.2.0(MT)_64-bit`) | `6.06` | ooRexx 5.2.0 |
