@@ -671,6 +671,48 @@ Avoid slash-asterisk sequences inside comment prose — write "`.rex`,
 separator-joined extensions are unavoidable, use something other than
 `/` immediately before a literal `*`.
 
+> **ooRexx note**: ooRexx also accepts `--` as a line comment, running
+> from the `--` to end of line — used throughout this edition's ooRexx
+> examples above (e.g. the `USE ARG`/`account` example under Variable
+> references) without ever being formally introduced until now. Unlike
+> `/* */`, a line comment has no closing delimiter to get wrong, so the
+> nesting trap above doesn't apply to it.
+>
+> **It does create a different, genuinely dangerous trap of its own:
+> `--` is recognized as a comment start unconditionally, taking
+> priority over parsing the two characters as two separate unary-minus
+> operators — even with no intent to comment anything out.** Verified
+> directly against ooRexx 5.2.0:
+>
+> ```ooRexx
+> a = 5
+> b = 3
+> say a - -b      /* 8 -- a real double-negation, spaces keep the two
+>                     "-" tokens separate */
+> say a-- b       /* 5 -- "-- b" is read as a comment and discarded;
+>                     this is NOT "a minus negative b" */
+> ```
+>
+> Subtracting a negative value therefore needs a space between the two
+> minus signs (`a - -b`) whenever there is any chance the two signs
+> could end up adjacent — a value substituted in from a variable or
+> expression can just as easily produce the adjacent-minus case as
+> literal source text can. Unlike the nested-comment trap, no error is
+> raised at all here: the expression silently evaluates to the wrong
+> number, which is what makes it worth flagging specifically rather
+> than trusting the parser to catch it.
+>
+> **Cross-dialect portability hazard**: classic Rexx (TSO/E REXX, CMS
+> REXX) has no `--` line-comment syntax at all, so identical source
+> text means genuinely different things depending on which interpreter
+> reads it — a comment in ooRexx, ordinary double-negation arithmetic
+> in classic Rexx. (Expected classic-Rexx behavior by ordinary operator
+> parsing rules, not independently verified against a live TSO/E or CMS
+> REXX interpreter — neither is available in the environment this
+> edition was checked against.) Code meant to run under both should
+> avoid adjacent minus signs entirely, not rely on either
+> interpretation.
+
 ### <a id="abutment"></a>Abutment
 
 Although REXX has a conventional concatenation operator (`||`), it
