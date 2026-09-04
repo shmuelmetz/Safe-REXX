@@ -1592,43 +1592,46 @@ Check the target dialect's own selector name rather than assuming
 either applies elsewhere. The argument itself is not universal, either:
 REXX/VM under GCS (see [ADDRESS and the default environment](#address)
 above) does not support `selector` at all, only the two-argument form.
-Building a string and running it through `INTERPRET` can achieve the
-same thing, but `INTERPRET` executes whatever Rexx source text it is
-handed — not just an assignment to one variable — which matters the
-moment `name` is not a value you fully control. Hand the same crafted
-string (a syntactically invalid variable name with a second clause
-hidden after a semicolon) to each, and the difference shows up
-immediately — verified identically on both ooRexx 5.2.0 and Regina
-3.9.7:
+`INTERPRET` can achieve the same *kind* of result — setting a
+variable whose name is only known at run time — but not the same way,
+and the difference matters the moment the name isn't a value you
+fully control. Doing the actual same task both ways, with the same
+(malicious) name string, verified identically on both ooRexx 5.2.0
+and Regina 3.9.7:
 
 ```rexx
-name = '1FOO; call SomeRoutine'
+foo = 'bar=1; call SomeRoutine; x'
 
-x = VALUE(name)     /* raises a SYNTAX condition on the malformed
-                        name -- "1FOO" is not a legal variable name --
-                        and executes nothing else at all */
+/* Way 1: build a string and INTERPRET it -- foo'=7' abuts (concate-
+   nates) foo's value with the literal "=7" first, THEN runs the
+   result as source: */
+interpret foo'=7'
+say bar        /* 1 */
+say x          /* 7 -- absorbs the trailing "=7" harmlessly */
+               /* but along the way, "call SomeRoutine" -- the
+                  clause hidden in the middle of foo's value -- also
+                  ran, printing its own message: injection succeeded */
 
-interpret name      /* "1FOO" alone doesn't parse as an assignment or
-                        keyword instruction, so it's sent to the
-                        current ADDRESS environment as a host command
-                        instead -- which fails ("'1FOO' is not
-                        recognized...") since no such command exists.
-                        That failure is NOT fatal, though: INTERPRET
-                        moves on to the next clause exactly as it
-                        would in any ordinary multi-clause program,
-                        and SomeRoutine really does get called --
-                        the injection succeeds even though the
-                        "carrier" clause in front of it was garbage */
+/* Way 2: VALUE(name, newvalue) -- foo's value is used ONLY as a
+   variable name, never as source text to execute: */
+baz = value(foo, 7)   /* raises a SYNTAX condition immediately --
+                          "bar=1; call SomeRoutine; x" is not a legal
+                          variable name -- nothing executes at all,
+                          not even the harmless-looking bar=1 part */
 ```
 
-`VALUE()` never attempts to execute anything from the string beyond
-using it as one variable's name; `INTERPRET` compiles and runs it as
-a program, clause by clause, so a failure in one clause doesn't stop
-a later one from executing — including one an attacker planted after
-a semicolon. Reserve `INTERPRET` for
-genuinely dynamic code — constructing a whole statement or expression
-at run time — not as a heavier substitute for a single indirect
-variable reference.
+Both lines are asked to do the identical job: set the variable named
+by `foo` to `7`. `INTERPRET` gets there by building a whole clause and
+running it — three clauses, actually, since `foo`'s value already
+contained two semicolons — and has no way to tell "the part of this
+string that's supposed to be a name" from "the part that's supposed
+to be code," because after concatenation there's only ever one
+string, containing all of it. `VALUE()` never blurs that line: its
+first argument is always and only a name, checked as one, so a string
+that isn't a legal name is refused outright rather than executed.
+Reserve `INTERPRET` for genuinely dynamic code — constructing a whole
+statement or expression at run time — not as a heavier substitute for
+a single indirect variable reference.
 
 If you call a procedure that has an `EXPOSE` clause on the
 `PROCEDURE` statement, it will only have access to the variables that
