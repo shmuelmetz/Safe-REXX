@@ -644,9 +644,12 @@ REXX comments are delimited by `/*` and `*/`, and — unlike most
 C-family languages — they **nest**: encountering another `/*` while
 already inside a comment opens an additional level, and it takes an
 equal number of `*/` to close back out to real code. This is standard
-Rexx behavior, deliberate language design documented since TRL-2 and
-carried into every dialect covered here — not an ooRexx extension or a
-parser bug.
+Rexx behavior, deliberate language design documented since TRL-2 —
+not an ooRexx extension or a parser bug. Verified identical on both
+ooRexx 5.2.0 and Regina 3.9.7 (a non-object-oriented classic
+interpreter): an unbalanced `/* outer /* inner still-in-outer */`
+raises the same "Unmatched comment delimiter" error on both, rather
+than the first `*/` closing everything.
 
 The trap is that ordinary prose *inside* a comment can contain the
 two-character sequence `/*` incidentally, with no intent to nest
@@ -671,47 +674,55 @@ Avoid slash-asterisk sequences inside comment prose — write "`.rex`,
 separator-joined extensions are unavoidable, use something other than
 `/` immediately before a literal `*`.
 
-> **ooRexx note**: ooRexx also accepts `--` as a line comment, running
-> from the `--` to end of line — used throughout this edition's ooRexx
-> examples above (e.g. the `USE ARG`/`account` example under Variable
-> references) without ever being formally introduced until now. Unlike
-> `/* */`, a line comment has no closing delimiter to get wrong, so the
-> nesting trap above doesn't apply to it.
->
-> **It does create a different, genuinely dangerous trap of its own:
-> `--` is recognized as a comment start unconditionally, taking
-> priority over parsing the two characters as two separate unary-minus
-> operators — even with no intent to comment anything out.** Verified
-> directly against ooRexx 5.2.0:
->
-> ```ooRexx
-> a = 5
-> b = 3
-> say a - -b      /* 8 -- a real double-negation, spaces keep the two
->                     "-" tokens separate */
-> say a-- b       /* 5 -- "-- b" is read as a comment and discarded;
->                     this is NOT "a minus negative b" */
-> ```
->
-> Subtracting a negative value therefore needs a space between the two
-> minus signs (`a - -b`) whenever there is any chance the two signs
-> could end up adjacent — a value substituted in from a variable or
-> expression can just as easily produce the adjacent-minus case as
-> literal source text can. Unlike the nested-comment trap, no error is
-> raised at all here: the expression silently evaluates to the wrong
-> number, which is what makes it worth flagging specifically rather
-> than trusting the parser to catch it.
->
-> **Cross-dialect portability hazard**: classic Rexx (TSO/E REXX, CMS
-> REXX) has no `--` line-comment syntax at all, so identical source
-> text means genuinely different things depending on which interpreter
-> reads it — a comment in ooRexx, ordinary double-negation arithmetic
-> in classic Rexx. (Expected classic-Rexx behavior by ordinary operator
-> parsing rules, not independently verified against a live TSO/E or CMS
-> REXX interpreter — neither is available in the environment this
-> edition was checked against.) Code meant to run under both should
-> avoid adjacent minus signs entirely, not rely on either
-> interpretation.
+**`--` as a line comment, running from the `--` to end of line, is not
+an ooRexx extension** — corrected after initially assuming it was: it
+is verified present in both ooRexx 5.2.0 and Regina 3.9.7 (a
+non-object-oriented, ANSI-1996-level classic interpreter), used
+throughout this edition's ooRexx examples above (e.g. the `USE
+ARG`/`account` example under Variable references) without ever being
+formally introduced until now. Unlike `/* */`, a line comment has no
+closing delimiter to get wrong, so the nesting trap above doesn't
+apply to it.
+
+**It does create a different, genuinely dangerous trap of its own, in
+both interpreters: `--` is recognized as a comment start
+unconditionally, taking priority over parsing the two characters as
+two separate unary-minus operators — even with no intent to comment
+anything out.** Verified directly against both ooRexx 5.2.0 and
+Regina 3.9.7, identical result on each:
+
+```rexx
+a = 5
+b = 3
+say a - -b      /* 8 -- a real double-negation, spaces keep the two
+                    "-" tokens separate */
+say a-- b       /* 5 on BOTH interpreters -- "-- b" is read as a
+                    comment and discarded; this is NOT "a minus
+                    negative b" on either one */
+```
+
+Subtracting a negative value therefore needs a space between the two
+minus signs (`a - -b`) whenever there is any chance the two signs
+could end up adjacent — a value substituted in from a variable or
+expression can just as easily produce the adjacent-minus case as
+literal source text can. No error is raised at all here on either
+interpreter: the expression silently evaluates to the wrong number,
+which is what makes it worth flagging specifically rather than
+trusting the parser to catch it.
+
+**Scope of this trap, honestly stated**: verified present on ooRexx
+and Regina specifically — both are ANSI X3.274-1996-level
+implementations (`PARSE VERSION` level `6.06`/`5.00` respectively, see
+the table above). Not verified, and not assumed either way, for TSO/E
+REXX or CMS REXX, which remain at the pre-ANSI TRL-2 level (`level
+4.00`) per that same table and are not available in the environment
+this edition was checked against — whether `--` is itself a
+formally-specified ANSI-1996 addition or a convenience both
+Regina's and ooRexx's maintainers happened to add independently is not
+established here either. Code that must also run on a TRL-2-level
+mainframe dialect should not rely on `--` being recognized as a
+comment there at all, and should avoid adjacent minus signs
+regardless of dialect.
 
 ### <a id="abutment"></a>Abutment
 
