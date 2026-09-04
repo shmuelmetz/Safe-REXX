@@ -984,6 +984,29 @@ do forever
                                         terminated the DO */
 ```
 
+**This example genuinely diverges by implementation** — checked
+directly on the two interpreters available while preparing this
+edition, and it's a three-way split, not two-way:
+
+- **TSO/E REXX** (the dialect this example is written for, per the
+  author's own direct experience): both the `SIGNAL` and the label
+  are accepted; the error above surfaces later, at the `END`
+  statement, exactly as described.
+- **Regina 3.9.7**: rejected immediately at the `SIGNAL BELL`
+  statement itself — `Error 16.2: Cannot SIGNAL to label "BELL"
+  because it is inside an IF, SELECT or DO group` — a different
+  mechanism (objecting to the target label's location) and a
+  different, earlier failure point than TSO/E REXX's.
+- **ooRexx 5.2.0**: rejected earlier still, at the label *declaration*
+  itself, regardless of the `SIGNAL` — `Error 47.2: Labels are not
+  allowed within a DO/LOOP block` — a static structural rule with
+  nothing to do with control-stack flushing at all.
+
+All three implementations agree the pattern is invalid; they disagree
+substantially on when and why. Don't assume a specific diagnostic, or
+even a specific *point of failure*, is portable across dialects for
+this pattern — only that some form of rejection is universal.
+
 `SIGNAL ON <condition>` and `CALL ON <condition>` both arm condition
 traps, but they are not interchangeable, and this is standard ANSI
 Rexx (X3.274-1996) behavior, not an ooRexx extension — `CALL ON` is
