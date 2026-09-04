@@ -405,6 +405,37 @@ included) as their function-call equivalents. `.InputStream`,
 underneath it, meant for building custom stream implementations, not
 for direct use on an ordinary file.
 
+A `.Stream` can be looped over two ways. Directly, since it supplies
+its own lines to `DO ... OVER`:
+
+```rexx
+s = .stream~new('data.txt')
+s~open('read')
+do ln over s
+    say ln
+end
+s~close
+```
+
+Or explicitly, via its `~supplier` method, which returns a
+`.StreamSupplier` object (`~available`, `~item`, `~index`, `~next`,
+the same protocol as any other ooRexx Supplier):
+
+```rexx
+s = .stream~new('data.txt')
+s~open('read')
+sup = s~supplier
+do while sup~available
+    say 'line' sup~index': ' sup~item
+    sup~next
+end
+s~close
+```
+
+Call `~supplier` only once per stream and keep the returned object:
+calling it a second time on the same stream picks up from wherever the
+first supplier left the read position, silently skipping lines.
+
 The safest thing is to encapsulate your input/output code and then
 take advantage of whatever facilities may exist in each target
 system, e.g., `EXECIO` with the `STEM` option, or a third-party
