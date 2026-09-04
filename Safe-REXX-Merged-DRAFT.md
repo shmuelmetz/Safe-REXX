@@ -118,6 +118,13 @@ running under a classic-Rexx or ooRexx interpreter, and its typed
 variables and Java interop give it a different pitfall profile than
 the dialects covered here.
 
+Nor is this an exhaustive survey of every Rexx implementation that has
+existed. ooRexx, Regina, TSO/E REXX, and CMS REXX are covered because
+they are the ones in active, widespread use; smaller or historical
+implementations (Personal REXX, KEXX, uni-REXX, and others) are not
+discussed, and code should be tested against any of them directly
+rather than assumed to follow the patterns described here.
+
 ### <a id="summary-of-pitfalls"></a>Summary of pitfalls
 
 REXX has a number of features that can trap the unwary. This does not
