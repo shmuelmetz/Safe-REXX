@@ -710,19 +710,20 @@ interpreter: the expression silently evaluates to the wrong number,
 which is what makes it worth flagging specifically rather than
 trusting the parser to catch it.
 
-**Scope of this trap, honestly stated**: verified present on ooRexx
-and Regina specifically — both are ANSI X3.274-1996-level
-implementations (`PARSE VERSION` level `6.06`/`5.00` respectively, see
-the table above). Not verified, and not assumed either way, for TSO/E
-REXX or CMS REXX, which remain at the pre-ANSI TRL-2 level (`level
-4.00`) per that same table and are not available in the environment
-this edition was checked against — whether `--` is itself a
-formally-specified ANSI-1996 addition or a convenience both
-Regina's and ooRexx's maintainers happened to add independently is not
-established here either. Code that must also run on a TRL-2-level
+**Scope of this trap**: verified present on ooRexx and Regina
+specifically — both are ANSI X3.274-1996-level implementations
+(`PARSE VERSION` level `6.06`/`5.00` respectively, see the table
+above). TSO/E REXX and CMS REXX, the pre-ANSI TRL-2-level (`level
+4.00`) dialects per that same table, support neither `--` as a
+comment nor UTF-8 source at all — confirmed from the author's own
+direct MVS/TSO experience, the same basis cited throughout this
+edition for claims about those two dialects. A source file for either
+one is EBCDIC text, not Unicode of any kind, which rules out `--`
+being a portable assumption there independent of whatever ANSI-1996
+does or doesn't say about it. Code that must also run on either
 mainframe dialect should not rely on `--` being recognized as a
-comment there at all, and should avoid adjacent minus signs
-regardless of dialect.
+comment there, and should avoid adjacent minus signs regardless of
+dialect.
 
 ### <a id="abutment"></a>Abutment
 
