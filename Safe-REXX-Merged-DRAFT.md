@@ -1400,42 +1400,79 @@ orphans.n = value`).
 >                                   different objects, not aliases */
 > ```
 
-> **ooRexx note**: `a. = b.` does not do what it looks like it does.
-> By analogy with arrays or any other bulk data structure, `a. = b.`
-> reads as "copy all of b's compound variables into a" — it is
-> nothing of the sort. `a.` and `b.` are each a bare symbol naming one
-> particular variable — the stem's own object, per the note above —
-> and `a. = b.` is an ordinary single-variable assignment: it points
-> the name `a.` at whatever object `b.` currently names, replacing
-> `a.`'s previous binding entirely rather than merging into it.
-> Verified directly against ooRexx 5.2.0:
+**`a. = b.` does not do what it looks like it does, in either
+dialect — but not the same wrong thing in each.** By analogy with
+arrays or any other bulk data structure, `a. = b.` reads as "copy all
+of b's compound variables into a." It is nothing of the sort in
+classic Rexx, and something different again in ooRexx.
+
+In classic Rexx, `a.` and `b.` used bare (no tail) are each simply the
+name of one ordinary variable — the same "default value" variable the
+common `a. = ''` idiom initializes. `a. = b.` reads `b.`'s *current
+value as that bare variable*, and — this is the dangerous part —
+assigning to the bare stem name resets the *entire* stem, wiping every
+previously-set tail (`a.1`, `a.2`, ...), not merely supplying a
+default for tails not yet set. If `b.`'s bare form was never itself
+explicitly assigned (only individual tails like `b.1` were), it is
+still a dropped symbol and evaluates to its own name — so every tail
+of `a.` ends up holding the literal string `"B."`, not any value `b`
+actually holds anywhere. Verified against Regina 3.9.7:
+
+```rexx
+a.1 = 'a-one'
+a.2 = 'a-two'
+b.1 = 'b-one'          /* b.'s bare form itself was never set */
+
+a. = b.
+
+say a.1                /* 'B.' -- not 'a-one', not 'b-one' */
+say a.2                /* 'B.' -- a.'s own prior data is gone too */
+
+b.1 = 'CHANGED'
+say a.1                /* still 'B.' -- a. and b. are fully
+                           independent after the assignment */
+```
+
+If `b.`'s bare form *had* been explicitly set first (`b. = 'x'`),
+that value — not the dropped-symbol artifact — is what ends up copied
+into every tail of `a.`, but `a.`'s own prior individually-set tails
+are still wiped wholesale either way, and `a.`/`b.` remain fully
+independent afterward: mutating one never affects the other.
+
+> **ooRexx note**: ooRexx does something different again — genuine
+> object aliasing, not a wipe. `a.` and `b.` are each a bare symbol
+> naming one particular variable — the stem's own object, per the note
+> above — and `a. = b.` is an ordinary single-variable assignment: it
+> points the name `a.` at whatever object `b.` currently names,
+> replacing `a.`'s previous binding entirely rather than merging into
+> it. Verified directly against ooRexx 5.2.0, same starting data as
+> the classic-Rexx example above:
 >
 > ```ooRexx
-> a.1 = 'a-one'
-> a.2 = 'a-two'
-> b.1 = 'b-one'
->
 > a. = b.
 >
-> say a.1     -- 'b-one'  -- not 'a-one': a.'s own prior data is gone
+> say a.1     -- 'b-one'  -- not 'a-one': a.'s own prior data is gone,
+>                             same as classic Rexx -- but here it shows
+>                             b.1's REAL value, not a wipe artifact
 > say a.2     -- 'B.2'    -- not 'a-two': this is b.2's own dropped-
 >                             symbol default, because a. now IS b.
 > say (a. == b.)   -- 1  -- the same object, not a copy
 >
 > b.1 = 'CHANGED'
 > say a.1     -- 'CHANGED' -- mutating b. mutates a. too, since
->                              they're one object under two names
+>                              they're one object under two names --
+>                              classic Rexx's a. and b. stayed fully
+>                              independent after the same assignment
 > ```
 >
-> `a.`'s previously-set tails (`a.1`, `a.2`) are not merged, preserved,
-> or even freed in any special way — they simply become unreachable
-> the instant `a.` stops naming that Stem object, exactly as an
-> ordinary variable's old value would be discarded by any reassignment.
-> From that point on `a.` and `b.` are the same object under two
-> names: changing a tail through either name changes what the other
-> name sees. If an independent copy is actually wanted, copy tails
-> individually (or via `~allIndexes`/`~allItems`, see above) into a
-> fresh `.stem~new` rather than assigning one bare stem to another.
+> From the point of assignment on, `a.` and `b.` are the same object
+> under two names: changing a tail through either name changes what
+> the other name sees — the opposite failure mode from classic Rexx's
+> wipe-and-go-independent behavior above, but equally destructive to
+> `a.`'s original data either way. If an independent copy is actually
+> wanted, copy tails individually (or via `~allIndexes`/`~allItems`,
+> see above) into a fresh `.stem~new` rather than assigning one bare
+> stem to another.
 
 ### <a id="dropped-symbols"></a>Dropped symbols used as constants
 
