@@ -1141,8 +1141,10 @@ misbehavior.** `PROCEDURE` must be the first instruction actually
 *executed* immediately after its own label is reached via `CALL` (or
 a function invocation); reaching it any other way — straight-line
 fall-through from the code above it — raises `Error 17: Unexpected
-PROCEDURE.` as a `SYNTAX` condition, at the `PROCEDURE` line itself.
-This is standard Rexx behavior, not ooRexx-specific. It's the
+PROCEDURE.` as a `SYNTAX` condition, at the `PROCEDURE` line itself —
+verified with the identical error number and wording on both ooRexx
+5.2.0 and Regina 3.9.7. This is standard Rexx behavior, not
+ooRexx-specific. It's the
 mechanism *behind* the "notoriously error prone" warning above: an
 unguarded fall-through into a `PROCEDURE`-led subprocedure doesn't
 just risk exposing variables unexpectedly — it crashes outright the
@@ -1596,12 +1598,34 @@ handed — not just an assignment to one variable — which matters the
 moment `name` is not a value you fully control. Hand the same crafted
 string (a syntactically invalid variable name with a second clause
 hidden after a semicolon) to each, and the difference shows up
-immediately: `VALUE()` simply raises a `SYNTAX` condition on the
-malformed name and executes nothing else, while `INTERPRET` begins
-executing the hidden second clause (visibly compiling and invoking the
-routine it named) before failing only because that call was missing a
-required argument — not because the injection itself was ever blocked.
-Reserve `INTERPRET` for
+immediately — verified identically on both ooRexx 5.2.0 and Regina
+3.9.7:
+
+```rexx
+name = '1FOO; call SomeRoutine'
+
+x = VALUE(name)     /* raises a SYNTAX condition on the malformed
+                        name -- "1FOO" is not a legal variable name --
+                        and executes nothing else at all */
+
+interpret name      /* "1FOO" alone doesn't parse as an assignment or
+                        keyword instruction, so it's sent to the
+                        current ADDRESS environment as a host command
+                        instead -- which fails ("'1FOO' is not
+                        recognized...") since no such command exists.
+                        That failure is NOT fatal, though: INTERPRET
+                        moves on to the next clause exactly as it
+                        would in any ordinary multi-clause program,
+                        and SomeRoutine really does get called --
+                        the injection succeeds even though the
+                        "carrier" clause in front of it was garbage */
+```
+
+`VALUE()` never attempts to execute anything from the string beyond
+using it as one variable's name; `INTERPRET` compiles and runs it as
+a program, clause by clause, so a failure in one clause doesn't stop
+a later one from executing — including one an attacker planted after
+a semicolon. Reserve `INTERPRET` for
 genuinely dynamic code — constructing a whole statement or expression
 at run time — not as a heavier substitute for a single indirect
 variable reference.
