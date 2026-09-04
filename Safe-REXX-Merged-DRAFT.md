@@ -1435,6 +1435,36 @@ you will probably get incorrect results on your second time through.
 > turn a plain string or number into a by-reference parameter the way
 > some other languages' reference parameters do, since Rexx strings and
 > numbers are themselves immutable values.
+>
+> **`PARSE ARG` is the inverse risk.** `PARSE` (in every form — `PARSE
+> ARG`, `PARSE VAR`, `PARSE PULL`, `PARSE VALUE`) does template-based
+> string matching, full stop; it has no branch for "already an object,
+> pass it through." Handed anything that isn't already a string, it
+> unconditionally forces the argument through that object's default
+> string representation before matching begins — silently discarding
+> the real object and replacing it with a generic placeholder, with no
+> error raised at the `PARSE` statement itself:
+>
+> ```ooRexx
+> call PassAnObject .directory~new
+> exit
+>
+> PassAnObject: procedure
+>     parse arg d
+>     say d~class     -- "The String class" -- not Directory
+>     say d           -- "a Directory" -- the placeholder text itself,
+>                         not the object's contents
+>     d~put('x', 'k') -- Error 97.1: Object "a Directory" does not
+>                         understand message "PUT"
+> ```
+>
+> Reach for `USE ARG` (or `USE STRICT ARG`) instead whenever an
+> argument is a genuine object rather than plain text — it binds the
+> argument directly with no string coercion. This is an easy bug to
+> introduce by accident: `PARSE ARG` is the classic-Rexx habit for
+> plain-string arguments, correct in that case, and the failure only
+> surfaces the moment a routine written that way receives something
+> that isn't already a string.
 
 `rc` and `result` are set by different things, and conflating them is
 a real, easy-to-make bug — in classic Rexx as much as ooRexx. `rc` is
