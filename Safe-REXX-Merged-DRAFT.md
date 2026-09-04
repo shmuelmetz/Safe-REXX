@@ -183,11 +183,11 @@ compatibility.
 
 If you write a command file that issues host commands — OS/2, CMS,
 TSO, DOS commands — do not assume that the default environment is
-that of the host itself. By including, e.g., `ADDRESS TSO` (on a
-mainframe) or `ADDRESS CMD` (on OS/2/Windows), you enable the routine
-for use from within other environments too, e.g., the ISPF/PDF editor
-on a mainframe, or an editor that uses REXX as its macro language on
-a PC.
+that of the host itself. By including, e.g., `ADDRESS TSO` (on z/OS),
+`ADDRESS CMS` (on z/VM), or `ADDRESS CMD` (on OS/2/Windows), you
+enable the routine for use from within other environments too, e.g.,
+the ISPF/PDF editor on a mainframe, or an editor that uses REXX as its
+macro language on a PC.
 
 A platform name alone is too coarse here — the *invocation context*,
 not just the OS, decides the default. Only environments actually
@@ -217,7 +217,7 @@ documented for that context are listed; a blank cell means none:
 The link/attach family: `LINK`, `LINKMVS`, `LINKPGM` (link to an
 unauthorized program on the same task level), `ATTACH`, `ATTCHMVS`,
 `ATTCHPGM` (attach one on a different task level) — available to a
-REXX exec in *any* address space, TSO/E or not. The APPC family:
+REXX exec in *any* address space, TSO or not. The APPC family:
 `CPICOMM` (SAA CPI Communications calls), `LU62` (APPC/MVS calls,
 SNA LU 6.2) — likewise available in any MVS address space. † `CONSOLE`
 needs an active extended MCS console session (started with the TSO/E
