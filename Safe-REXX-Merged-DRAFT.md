@@ -14,8 +14,7 @@ one text, adds explicit ooRexx guidance throughout (both papers
 predate ooRexx and explicitly disclaimed direct experience with
 Object REXX), and extends the scope to the fuller range of platforms
 and dialects in current use: TSO/E REXX (the only REXX on z/OS,
-running under TSO, ISPF, the OMVS shell, batch (`PGM=IKJEFT01` or
-`PGM=IRXJCL` — different animals, see below), and System REXX), CMS,
+running under TSO, ISPF, the OMVS shell, `IRXJCL`, and System REXX), CMS,
 Classic REXX, Object REXX, ooRexx, Regina.
 
 The current source of this document, including its revision history,
@@ -170,8 +169,7 @@ avoiding programming errors.
 Sections marked **ooRexx note** cover behavior specific to Open
 Object Rexx that does not apply to classic Rexx dialects (TSO/E
 REXX — the same interpreter whether run under TSO, ISPF, the OMVS
-shell, batch (`PGM=IKJEFT01` or `PGM=IRXJCL`), or System REXX — CMS
-REXX, Regina, and the like). Note
+shell, `IRXJCL`, or System REXX — CMS REXX, Regina, and the like). Note
 that OREXX (IBM's original Object REXX — released for OS/2, Windows,
 and AIX — the precursor ooRexx implements and succeeds as an
 open-source project) is itself an
