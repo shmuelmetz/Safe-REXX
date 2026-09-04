@@ -44,6 +44,7 @@ permission is prohibited.
    - [Availability of optional function libraries](#function-library-availability)
    - [Variable patterns](#variable-patterns)
 3. [Specific examples and recommended avoidance tactics](#specific-examples)
+   - [Comments](#comments)
    - [Abutment](#abutment)
    - [Continuation](#continuation)
    - [Keywords](#keywords)
@@ -637,6 +638,39 @@ forms are supported on each and program accordingly.
 Although REXX has a number of features that lend themselves to fast
 prototyping, it has a few pitfalls that can beset the unwary.
 
+### <a id="comments"></a>Comments
+
+REXX comments are delimited by `/*` and `*/`, and — unlike most
+C-family languages — they **nest**: encountering another `/*` while
+already inside a comment opens an additional level, and it takes an
+equal number of `*/` to close back out to real code. This is standard
+Rexx behavior, deliberate language design documented since TRL-2 and
+carried into every dialect covered here — not an ooRexx extension or a
+parser bug.
+
+The trap is that ordinary prose *inside* a comment can contain the
+two-character sequence `/*` incidentally, with no intent to nest
+anything:
+
+```rexx
+/* every *.rex/*.ps1/*.lua file under scripts\ gets copied */
+```
+
+Reading left to right, `rex/*.ps1` and `ps1/*.lua` are each an
+unintended `/*` that opens another nesting level. With only the one
+closing `*/` actually written, two of the three opened levels stay
+unclosed — everything from that comment onward, often dozens of
+otherwise-correct lines, is silently absorbed as comment text until
+the parser exhausts the file. The reported error is anchored at the
+*original*, outermost `/*` ("unmatched comment delimiter"), not at
+whatever later text actually broke the pairing, which makes the real
+cause easy to miss on a first read of the diagnostic.
+
+Avoid slash-asterisk sequences inside comment prose — write "`.rex`,
+`.ps1`, and `.lua`" rather than "`.rex/*.ps1/*.lua`" — or, if
+separator-joined extensions are unavoidable, use something other than
+`/` immediately before a literal `*`.
+
 ### <a id="abutment"></a>Abutment
 
 Although REXX has a conventional concatenation operator (`||`), it
@@ -659,6 +693,16 @@ one-character names for your variables.
 It is so easy to misuse abutment that some recommend not to use it at
 all. That position is extreme, since abutment is so convenient and
 readable, but exercise caution and good judgement in its use.
+
+**REXX has no ternary conditional operator.** `cond ? a : b`, familiar
+from C, Java, and JavaScript, is not REXX syntax at all — the parser
+reads the `?` and `:` as part of the surrounding expression and fails
+with a syntax error (ooRexx: "Incorrect expression detected at ':'")
+rather than doing anything resembling a conditional selection. Write
+out the equivalent `IF`/`THEN`/`ELSE` instead, or, for a single
+variable assignment, compute both branches into a plain variable
+beforehand and reference that — there is no expression-level shorthand
+for it in any dialect covered here.
 
 #### Figure 1: Concatenation operators
 
