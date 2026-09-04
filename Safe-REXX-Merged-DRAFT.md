@@ -1400,6 +1400,43 @@ orphans.n = value`).
 >                                   different objects, not aliases */
 > ```
 
+> **ooRexx note**: `a. = b.` does not do what it looks like it does.
+> By analogy with arrays or any other bulk data structure, `a. = b.`
+> reads as "copy all of b's compound variables into a" — it is
+> nothing of the sort. `a.` and `b.` are each a bare symbol naming one
+> particular variable — the stem's own object, per the note above —
+> and `a. = b.` is an ordinary single-variable assignment: it points
+> the name `a.` at whatever object `b.` currently names, replacing
+> `a.`'s previous binding entirely rather than merging into it.
+> Verified directly against ooRexx 5.2.0:
+>
+> ```ooRexx
+> a.1 = 'a-one'
+> a.2 = 'a-two'
+> b.1 = 'b-one'
+>
+> a. = b.
+>
+> say a.1     -- 'b-one'  -- not 'a-one': a.'s own prior data is gone
+> say a.2     -- 'B.2'    -- not 'a-two': this is b.2's own dropped-
+>                             symbol default, because a. now IS b.
+> say (a. == b.)   -- 1  -- the same object, not a copy
+>
+> b.1 = 'CHANGED'
+> say a.1     -- 'CHANGED' -- mutating b. mutates a. too, since
+>                              they're one object under two names
+> ```
+>
+> `a.`'s previously-set tails (`a.1`, `a.2`) are not merged, preserved,
+> or even freed in any special way — they simply become unreachable
+> the instant `a.` stops naming that Stem object, exactly as an
+> ordinary variable's old value would be discarded by any reassignment.
+> From that point on `a.` and `b.` are the same object under two
+> names: changing a tail through either name changes what the other
+> name sees. If an independent copy is actually wanted, copy tails
+> individually (or via `~allIndexes`/`~allItems`, see above) into a
+> fresh `.stem~new` rather than assigning one bare stem to another.
+
 ### <a id="dropped-symbols"></a>Dropped symbols used as constants
 
 ANSI X3.274-1996 distinguishes a *symbol* (§3.1.47: "a sequence of
