@@ -496,8 +496,8 @@ meet:
 
 | Implementation | `name` | `level` | Source |
 |---|---|---|---|
-| OS/2 classic REXX (Procedures Language 2/REXX) | `REXXSAA` | `4.00` | IBM's own reference manual |
-| OREXX (IBM's Object REXX) | `OBJREXX` | `6.00` | IBM's own reference manual (OS/2 edition) |
+| OS/2 classic REXX (Procedures Language 2/REXX) | `REXXSAA` | `4.00` | *OS/2 Procedures Language 2/REXX Reference*, S10G-6268 |
+| OREXX (IBM's Object REXX) | `OBJREXX` | `6.00` | *Object REXX Reference* (REXX.INF), OS/2 edition, c. 2001 |
 | CMS / TSO/E REXX (classic mainframe, "REXX370") | `REXX370` | `4.00` | Widely documented |
 | Regina | `REXX-Regina_<version>` (e.g. `REXX-Regina_3.9.6(MT)`) | `5.00` | Regina's own reference manual; ANSI-compliant since Regina 3.1 |
 | ooRexx | `REXX-ooRexx_<version>(MT)_<bits>-bit` (e.g. `REXX-ooRexx_5.2.0(MT)_64-bit`) | `6.06` | ooRexx 5.2.0 |
