@@ -1194,14 +1194,32 @@ dangerous practice, and should be avoided.
 > variables — a completely different variable pool, private to the
 > object, not the caller's locals. And **`EXPOSE` is not legal at all
 > inside a `::ROUTINE`** — a routine has no access to any caller's
-> variable pool the way an internal subroutine does. Attempting it
-> raises a parse-time error (Error 27.1) *before any instruction in the
-> calling scope executes at all* — which means a `SIGNAL ON SYNTAX`
-> trap set up in the caller will never fire, because the whole program
-> fails to parse before execution ever begins. If code invoking such a
-> routine is launched as a child process, the symptom is a silent
-> failure with a non-zero return code and nothing in any in-process
-> trap; the real diagnostic is only in the child's captured stderr.
+> variable pool the way an internal subroutine does. **Corrected after
+> checking directly against ooRexx 5.2.0** (the original wording here
+> asserted a parse-time failure with no basis in an actual test — a
+> real error in its own right, exactly the kind of unverified claim
+> this edition otherwise tries not to make): the whole program parses
+> and starts running normally; the failure only happens at the moment
+> `myroutine` is actually *called*, as an ordinary runtime execution
+> error —
+>
+> ```rexx
+> say 'before call'      -- this really does print
+> call myroutine          -- fails HERE, not at parse time
+> say 'after call'        -- never reached
+> exit
+> ::routine myroutine
+>   expose foo            -- Error 98.992: "The EXPOSE instruction may
+>   say foo                  only be used from method invocations."
+> ```
+>
+> and it *is* catchable in-process, contrary to what was claimed here
+> before: a `SIGNAL ON SYNTAX` trap set in the caller fires normally,
+> `CONDITION('C')` reports `SYNTAX` — there is no parse-time failure
+> to dodge the trap. If code invoking such a routine is launched as a
+> child process with no trap set up, the ordinary consequence of any
+> uncaught error applies (non-zero return code, diagnostic on stderr)
+> — nothing special about this particular error in that respect.
 
 ### <a id="type-and-range-checking"></a>Type and range checking
 
