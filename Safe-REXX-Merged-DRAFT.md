@@ -1437,23 +1437,29 @@ orphans.n = value`).
 >                                   different objects, not aliases */
 > ```
 
-**`a. = b.` does not do what it looks like it does, in either
-dialect — but not the same wrong thing in each.** By analogy with
-arrays or any other bulk data structure, `a. = b.` reads as "copy all
-of b's compound variables into a." It is nothing of the sort in
-classic Rexx, and something different again in ooRexx.
+**`a. = b.` is not portable between dialects — it's an ordinary,
+correct assignment in each, just not the same assignment.** By
+analogy with arrays or any other bulk data structure, `a. = b.` reads
+as "copy all of b's compound variables into a." Neither dialect
+actually does that; each does something else entirely, consistent
+with its own variable model, and code written assuming one dialect's
+behavior will simply be wrong — not broken, just running the *other*
+dialect's well-defined semantics instead of the one the author had in
+mind.
 
 In classic Rexx, `a.` and `b.` used bare (no tail) are each simply the
 name of one ordinary variable — the same "default value" variable the
 common `a. = ''` idiom initializes. `a. = b.` reads `b.`'s *current
-value as that bare variable*, and — this is the dangerous part —
-assigning to the bare stem name resets the *entire* stem, wiping every
-previously-set tail (`a.1`, `a.2`, ...), not merely supplying a
-default for tails not yet set. If `b.`'s bare form was never itself
-explicitly assigned (only individual tails like `b.1` were), it is
-still a dropped symbol and evaluates to its own name — so every tail
-of `a.` ends up holding the literal string `"B."`, not any value `b`
-actually holds anywhere. Verified against Regina 3.9.7:
+value as that bare variable* and assigns it to `a.`, and — this is the
+part that catches people out — assigning to the bare stem name resets
+the *entire* stem as an ordinary consequence of how that assignment is
+defined, replacing every previously-set tail (`a.1`, `a.2`, ...), not
+merely supplying a default for tails not yet set. If `b.`'s bare form
+was never itself explicitly assigned (only individual tails like
+`b.1` were), it is still a dropped symbol and evaluates to its own
+name — so every tail of `a.` ends up holding the literal string
+`"B."`, not any value `b` actually holds anywhere. Verified against
+Regina 3.9.7:
 
 ```rexx
 a.1 = 'a-one'
@@ -1471,13 +1477,13 @@ say a.1                /* still 'B.' -- a. and b. are fully
 ```
 
 If `b.`'s bare form *had* been explicitly set first (`b. = 'x'`),
-that value — not the dropped-symbol artifact — is what ends up copied
-into every tail of `a.`, but `a.`'s own prior individually-set tails
-are still wiped wholesale either way, and `a.`/`b.` remain fully
-independent afterward: mutating one never affects the other.
+that value — not the dropped-symbol artifact — is what ends up
+assigned to every tail of `a.`, but `a.`'s own prior individually-set
+tails are still replaced wholesale either way, and `a.`/`b.` remain
+fully independent afterward: mutating one never affects the other.
 
 > **ooRexx note**: ooRexx does something different again — genuine
-> object aliasing, not a wipe. `a.` and `b.` are each a bare symbol
+> object aliasing, not a stem-wide replacement. `a.` and `b.` are each a bare symbol
 > naming one particular variable — the stem's own object, per the note
 > above — and `a. = b.` is an ordinary single-variable assignment: it
 > points the name `a.` at whatever object `b.` currently names,
@@ -1504,12 +1510,15 @@ independent afterward: mutating one never affects the other.
 >
 > From the point of assignment on, `a.` and `b.` are the same object
 > under two names: changing a tail through either name changes what
-> the other name sees — the opposite failure mode from classic Rexx's
-> wipe-and-go-independent behavior above, but equally destructive to
-> `a.`'s original data either way. If an independent copy is actually
-> wanted, copy tails individually (or via `~allIndexes`/`~allItems`,
-> see above) into a fresh `.stem~new` rather than assigning one bare
-> stem to another.
+> the other name sees — the opposite of classic Rexx's
+> replace-and-go-independent behavior above, but the same underlying
+> lesson either way: `a.`'s previous binding is simply gone once the
+> assignment runs, exactly as reassigning any other variable would
+> discard its old value, and neither dialect is doing anything other
+> than its own ordinary, correct thing. If an independent copy is
+> actually wanted, copy tails individually (or via
+> `~allIndexes`/`~allItems`, see above) into a fresh `.stem~new` rather
+> than assigning one bare stem to another.
 
 ### <a id="dropped-symbols"></a>Dropped symbols used as constants
 
