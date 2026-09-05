@@ -1592,7 +1592,8 @@ symbol that's still dropped when your logic expected a real variable.
 > symbol. This breaks the moment any bare message-send whose method
 > returns nothing executes — including the ordinary case of building up
 > your *own* local variable named `result` via repeated bare sends to
-> it:
+> it. Verified directly against ooRexx 5.2.0, including the exact
+> error text below:
 >
 > ```ooRexx
 > result = .Directory~new        -- fine: plain assignment, RESULT is now
@@ -1843,13 +1844,15 @@ class defined with plain `::CLASS Foo` parses cleanly and is usable by
 leading-dot environment-symbol lookup (`.Foo~new`) from a *different*
 package that reaches it only through `::REQUIRES`. The failure is
 silent at `::REQUIRES` time — no error until the first actual
-reference, and it reads like the class doesn't exist at all:
+reference, and it reads like the class doesn't exist at all. Verified
+directly against ooRexx 5.2.0, exact wording included:
 
 ```
 Error 97.1: Object ".FOO" does not understand message "NEW".
 ```
 
-Fix: declare the class `PUBLIC`:
+Fix: declare the class `PUBLIC` — confirmed this resolves it, `.Foo~new`
+then runs successfully from the other package:
 
 ```ooRexx
 ::class Foo public     -- required for .Foo~new to work from another package
@@ -1879,7 +1882,8 @@ contiguous block at the very start of the file, before the first
 `::` directive of any kind. Once a `::CLASS`, `::ROUTINE`, or
 `::REQUIRES` directive has appeared, every subsequent top-level clause
 must also be a directive — plain executable code cannot resume after
-it, even just to call a routine defined below:
+it, even just to call a routine defined below. Verified directly
+against ooRexx 5.2.0, exact wording included:
 
 ```ooRexx
 /* WRONG -- fails with Error 99.916, "Unrecognized directive
