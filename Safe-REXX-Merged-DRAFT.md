@@ -1743,7 +1743,11 @@ reading past the end.
 
 **`LINEOUT` opens in append mode by default; a full-file overwrite
 needs an explicit replace first.** This is standard Rexx behavior, not
-an ooRexx quirk, and a real bug pattern, not a hypothetical: a script
+an ooRexx quirk — verified identically on ooRexx 5.2.0 and Regina
+3.9.7: two separate `LINEOUT` calls to the same file, each followed by
+closing it, with no `REPLACE` in between, leave both writes in the
+file rather than the second overwriting the first. It's a real bug
+pattern, not a hypothetical: a script
 that deletes a file and then writes it fresh with repeated `LINEOUT`
 calls will silently duplicate content the moment the delete step ever
 fails (a locked file, a permission issue), because `LINEOUT` doesn't
