@@ -1272,20 +1272,37 @@ say mystem.i           /* CORRECT: 'three' -- bare-symbol substitution,
                            classic Rexx, no bracket needed at all */
 ```
 
-One form that looks plausible by analogy is a genuine pitfall in any
-Rexx dialect:
+One form that looks plausible by analogy is a genuine pitfall in every
+Rexx dialect, but not the identical failure in each — checked directly
+on both ooRexx 5.2.0 and Regina 3.9.7:
 
 ```rexx
-say mystem.(i)         /* WRONG in any Rexx dialect: Error 43 --
-                           parsed as a call to a routine literally
-                           named MYSTEM */
+say mystem.(i)
 ```
+
+On ooRexx this is parsed as a call to a routine literally named
+`MYSTEM.` (the trailing dot included) and fails internally with
+`Error 43.1: Could not find routine "MYSTEM."` — no attempt is made to
+reach outside the interpreter. On Regina the same unresolved-routine
+situation instead falls through to an *external* command lookup: the
+name gets handed to the operating system, which reports its own
+"`'MYSTEM.' is not recognized as an internal or external command`" —
+a shell-level failure, not a Rexx-level `Error 43` at all. Both are
+definitely wrong, and neither does what the analogy to array indexing
+suggests, but don't assume the specific error (or even whether the
+failure stays inside the interpreter) is portable — only that this
+form doesn't work anywhere.
 
 > **ooRexx note**: two more forms that look plausible by analogy —
 > `mystem[i]` and `mystem.[i]` — are valid *only* in ooRexx; classic
 > Rexx's own lexer has no defined meaning for `[`/`]` at all, so a
 > classic-Rexx program can't reach for either by mistake in the first
-> place. In ooRexx, both parse and run: `[]` is genuinely one uniform
+> place — confirmed directly: `mystem[i]` on Regina fails at the lexer
+> itself, before any execution, with `Error 13.1: Invalid character in
+> program (('5b'X)` (`5B` hex is `[`), while the identical line on
+> ooRexx runs and returns `"S"` (character 3 of the dropped symbol's
+> own name `MYSTEM`), exactly as described below. In ooRexx, both
+> parse and run: `[]` is genuinely one uniform
 > mechanism — bracket notation sends a message named `[]` to the
 > receiver, with whatever's inside the brackets passed as its argument
 > list — but what that list *means* is entirely up to the receiving
