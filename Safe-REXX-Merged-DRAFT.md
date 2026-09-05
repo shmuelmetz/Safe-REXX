@@ -1722,8 +1722,12 @@ cmdRc = rc                /* CORRECT -- a host command sets rc */
 permits either to report only `0` or `1` (more data available, or
 not) instead of a real number, and which one is exact, if either, is
 a per-implementation choice, not a platform split — CMS's `LINES()`
-is exact for disk files but its `CHARS()` never is; ooRexx's
-`CHARS()` is exact for disk files but its own `LINES()` isn't:
+is exact for disk files but its `CHARS()` never is; ooRexx's and
+Regina's `CHARS()` are both exact for disk files but their own
+`LINES()` isn't (verified against a real 29-byte, 3-line disk file:
+both report `chars()` as exactly `29`, but `lines()` as `1` on both —
+not the real line count — regardless of how many lines actually
+remain unread):
 
 ```rexx
 /* WRONG -- assumes lines() gives an exact count */
