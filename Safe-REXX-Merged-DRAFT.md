@@ -79,12 +79,14 @@ of other platforms,
 including Unix, and has been designated by IBM as the SAA Procedures
 Language. REXX has been used to implement a wide variety of
 applications beyond its original problem domain, including many of
-substantial size. **Open Object Rexx (ooRexx)** is a widely-used,
-open-source, object-oriented extension of classic Rexx: it executes
-unmodified classic Rexx programs and adds classes, methods, and
-message-send syntax on top. Everything in this edition that applies
-to classic Rexx applies unchanged to ooRexx unless a specific note
-says otherwise.
+substantial size. IBM later released **OREXX** (Object REXX), a
+proprietary object-oriented extension of classic Rexx for OS/2,
+Windows, and AIX. **Open Object Rexx (ooRexx)**, its open-source
+successor, is a widely-used, object-oriented extension of classic
+Rexx: it executes unmodified classic Rexx programs and adds classes,
+methods, and message-send syntax on top. Everything in this edition
+that applies to classic Rexx applies unchanged to ooRexx unless a
+specific note says otherwise.
 
 ### <a id="platforms-and-standards"></a>Platforms and standards conformance
 
@@ -108,7 +110,18 @@ despite this: it supports stream I/O (`LINEIN`, `LINEOUT`, `STREAM`,
 and the like) only when running in the UNIX System Services (OMVS)
 shell, not in an ordinary TSO/E address space, which uses `EXECIO`
 instead — see [I/O model](#io-model) below for the full detail and a
-worked example of both forms.
+worked example of both forms. This carve-out exists because stream
+I/O is implemented via genuine (POSIX) syscalls, and issuing one
+requires the enclosing task to be *dubbed* — established as a UNIX
+process by z/OS UNIX System Services. Dubbing happens automatically
+inside the OMVS shell; an ordinary TSO/E address space is not dubbed,
+so `LINEIN`/`LINEOUT`/`STREAM` are unavailable there regardless of
+whether TSO itself is interactive or batch. This is unrelated to the
+link/attach family (`LINK`, `LINKMVS`, `LINKPGM`, `ATTACH`,
+`ATTCHMVS`, `ATTCHPGM` — see [ADDRESS and the default
+environment](#address) below): those call other MVS programs or
+subroutines directly and have nothing to do with UNIX System Services
+or POSIX syscalls.
 
 This document does not discuss NetRexx. NetRexx compiles a
 Rexx-derived syntax to Java bytecode (or Java source) rather than
@@ -225,8 +238,9 @@ space, TSO or not. The APPC family: `CPICOMM`, `LU62` — likewise
 available in any MVS address space. † `CONSOLE`
 needs an active extended MCS console session (started with the TSO/E
 `CONSOLE` command) and console command authority; it's available only
-in a genuine TSO/E address space — interactive TSO or batch TSO via
-`PGM=IKJEFT01` — not under `PGM=IRXJCL`, which runs a REXX exec
+in a TSO/E address space — interactive TSO or batch TSO via
+`PGM=IKJEFT01`, both of which establish TSO/E fully — not under
+`PGM=IRXJCL`, which runs a REXX exec
 directly without establishing TSO/E at all ("batch" alone is
 ambiguous between these two; they are not interchangeable). `ISREDIT`
 requires an
@@ -294,6 +308,23 @@ already dispatches straight to the platform's native shell. An extra
 wrapped command itself contains its own quoted arguments (a path with
 spaces, a commit message with spaces): `cmd.exe`'s quote parser does
 not reliably handle the resulting nested quoting.
+
+### <a id="ispf"></a>ISPF
+
+An exec invoked from ISPF runs under the same default host-command
+environment as any other TSO/E or CMS exec — `TSO` or `CMS`,
+respectively, per the table above. ISPF itself adds exactly one
+functional difference: the `ISPEXEC` environment, for ISPF dialog
+services (panel display, dialog variable services, and the rest of
+the ISPF service family), and, inside an active edit session,
+`ISREDIT`, for edit-macro line commands. Nothing else about writing
+REXX changes because ISPF is the caller.
+
+ISPF reserves variable names beginning with `Z` for its own dialog
+variables — `ZSCREEN`, `ZUSER`, `ZAPPLID`, and the rest of the
+`Z`-prefixed pool it shares across panels and services. Do not begin
+a variable name with `Z` in code invoked from ISPF; doing so risks
+colliding with one of ISPF's own variables.
 
 ### <a id="environmental-factors"></a>Environmental factors
 
