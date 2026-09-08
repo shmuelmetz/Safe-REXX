@@ -16,7 +16,8 @@ including the original 1993 submissions and an intermediate 1997-98
 web snapshot, not just the two 2023 HTML files, which found one
 genuinely dropped section and restored it; ooRexx guidance grounded in
 `AI-Priming/ooRexx/RULES.md`) and what's still pending (dedicated
-ISPF, System REXX, and fuller ArcaOS/OREXX sections). The original
+System REXX and fuller ArcaOS/OREXX sections — the ISPF section is
+now done). The original
 source files, in several formats and archival copies from both
 publication venues, remain in this repo's subdirectories
 (`NASPA/`, `OS2DEV/`, `Attached/`, `TSM/`, `$REXX/`, `Safe REXX/`) for
