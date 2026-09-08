@@ -326,6 +326,45 @@ variables — `ZSCREEN`, `ZUSER`, `ZAPPLID`, and the rest of the
 a variable name with `Z` in code invoked from ISPF; doing so risks
 colliding with one of ISPF's own variables.
 
+### <a id="system-rexx"></a>System REXX
+
+System REXX starts automatically during Master Scheduler
+Initialization and runs execs outside TSO/E and batch entirely — no
+job, no logged-on user, no ISPF. An exec is submitted either from an
+authorized program via the `AXREXX` macro or from the operator
+console with `MODIFY AXR,<exec name>`; it runs in its own `AXR`
+address space (`TSO=NO`) or, if `TSO=YES` is specified, in one of up
+to eight dedicated TSO server address spaces (`AXR01`–`AXR08`) so it
+can allocate data sets without risking a DDNAME conflict with another
+exec running concurrently — System REXX frees any allocations left
+open when a `TSO=YES` exec ends. The default host-command environment
+and its `TSO=YES`/`TSO=NO` differences are in the table above; nothing
+below repeats that.
+
+There is no terminal. Any `SAY` or `TRACE` output goes straight to
+the console that invoked the exec — the operator's console, or
+whatever console issued the triggering command — not to a session
+only the exec's own user is looking at. Debug output and status
+messages that would be harmless chatter under TSO/E become console
+traffic here; keep both to a minimum, and never leave `TRACE` on by
+default in a System REXX exec the way you might for a moment during
+interactive TSO/E development.
+
+Exec names have a platform-imposed naming restriction with the same
+shape as ISPF's `Z`-prefix rule above: the `REXXLIB` concatenation
+that System REXX searches must not contain an exec beginning with the
+letters `A` through `I` — that range is reserved for IBM's own execs,
+shipped in `SYS1.SAXREXEC`, which is appended to the concatenation
+automatically. Name a System REXX exec starting with `A`–`I` and it
+risks colliding with (or simply losing to search order against) an
+IBM-supplied exec of the same name.
+
+The `AXR` address space itself is non-cancelable — the only way to
+stop it is the operator `STOP AXR` command, not a normal task cancel.
+An exec that hangs or loops here is a harder problem to walk back from
+than the equivalent mistake under TSO/E, where the user's own session
+can simply be canceled or logged off.
+
 ### <a id="environmental-factors"></a>Environmental factors
 
 REXX does not shield you from the underlying environment; in writing
@@ -2026,6 +2065,7 @@ directly by me.
 - z/OS MVS IPCS User's Guide, IBM Corp., SA23-1384 (documents the `ADDRESS IPCS` instruction and its per-mode availability within an IPCS session — a separate manual from the REXX Reference above, which does not cover IPCS)
 - ISPF Dialog Developer's Guide and Reference, IBM Corp., SC34-4821 (does not independently state the REXX host command environment list for ISPF; see the TSO/E REXX Reference above for that)
 - z/OS Using REXX and z/OS UNIX System Services, IBM Corp., SA23-2283 (documents TSO/E REXX's behavior in the OMVS shell separately from the TSO/E REXX Reference above)
+- z/OS MVS Programming: Authorized Assembler Services Guide, IBM Corp., SA23-1371 (current z/OS 3.2 edition, SA23-1371-70) — the System REXX chapter documents the `AXREXX` macro, `MODIFY AXR`/`SYSREXX` operator commands, the `AXR`/`AXR01`–`AXR08` address-space structure, the `REXXLIB` A–I exec-name reservation, and console-directed `SAY`/`TRACE` output; a separate manual from the REXX Reference above, which does not cover System REXX at all
 - z/VM REXX/VM Reference, IBM Corp., SC24-6314
 - The REXX Language: A Practical Approach to Programming, 2nd Edition. By Michael F. Cowlishaw (Prentice-Hall, Inc., a division of Simon & Schuster), Englewood Cliffs, New Jersey 07632, ISBN 0-13-780651-5
 - Rexx brief history, Michael F. Cowlishaw, <https://speleotrove.com/rexxhist/rexxhistory.html> (source for the REX-to-REXX naming history and early VM/SP release dates)
