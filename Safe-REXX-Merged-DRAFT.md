@@ -378,7 +378,7 @@ covers all of them.
 
 Both interpreters are installed concurrently, but only one is active
 system-wide at a time. `SWITCHRX.CMD` switches by renaming files —
-active is `REXX.*`, inactive is `CREXX.*` or `OREXX.*` — and the
+active is `rexx.*`, inactive is `crexx.*` or `orexx.*` — and the
 switch takes effect only after a reboot. Confirm which one is actually
 running with `PARSE VERSION` (table above); it isn't a per-exec
 choice.
