@@ -376,11 +376,19 @@ OREXX (Object REXX) that shipped on OS/2 carry forward unchanged on
 both, and nothing below needs to distinguish among the three; "OS/2"
 covers all of them.
 
-OREXX does not replace Classic REXX — the two interpreters install
-side by side, and which one runs a given `.CMD` file depends on
-association and invocation, not on which one happens to be present.
-Use the `PARSE VERSION` check in the interpreter-identification table
-above to tell them apart at runtime rather than assuming from context.
+OREXX does not replace Classic REXX on disk — both interpreters are
+installed concurrently — but only one of them is *active* system-wide
+at any given time, and that is a machine-wide setting, not something
+an individual `.CMD` file can choose for itself. `SWITCHRX.CMD`
+switches which one is active by renaming files: the active
+interpreter's files are named `REXX.*`; the inactive one's are renamed
+to `COREXX.*` (Classic REXX) or `OREXX.*` (Object REXX), whichever is
+currently sidelined. The switch does not take effect until after a
+reboot. Because which interpreter is active is a system-wide,
+reboot-gated setting rather than a per-exec choice, use the `PARSE
+VERSION` check in the interpreter-identification table above to
+confirm which one is actually running a given program, rather than
+assuming from context.
 
 The two interpreters keep separate online reference manuals, both
 installed together: `CREXX.INF` — the name is short for Classic
