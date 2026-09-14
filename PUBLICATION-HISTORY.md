@@ -121,6 +121,17 @@ printed in the February 1995 OS/2 Magazine." That is exactly the kind
 of nonprofit, several-months-after-first-publication distribution
 Cathy Passage had described as needing a time lag.
 
+The manuscript itself (`NASPA/SAFEREXX.ASC` in this repo) carries its
+own explicit rights grant, matching what he'd negotiated: "Permission
+for reproduction in whole or in part is hereby granted to educational,
+non-profit and computer user groups for internal, non-profit use,
+provided credit is given and this notice is included." Its closing
+biography also pins down his employer at the time: Unisys Corporation,
+Senior MVS Systems Programmer on a Federal Government
+facility-management contract, 34 years' computing experience, MA in
+Mathematics from SUNY Buffalo — predating the NSF and EDS-era
+employers that turn up in the later MR/2 ICE correspondence.
+
 ## The twenty-year reprint tail (1994-2013)
 
 The MR/2 ICE mail archive (folders `F028 Safe REXX` and `F805 CPCUG`)
@@ -220,3 +231,10 @@ showing a `safe_rexx.html` file, consistent with the HTML revision
 described above. (The "REXXLA is the desktop version" line used above
 to attribute the RexxLA reprint is from the original `F028` archive,
 not this second export.)
+
+One more source: a backup of his old `H:\NASPA\` working folder
+(`Downloads\NaSPA.zip`) turned out to be redundant with the
+`SAFEREXX.*`/`saferexxe.doc` files already committed to this repo's
+`NASPA/` folder — confirmed byte-identical — except for two files out
+of scope for this project (a companion, non-Safe-REXX manuscript and
+an unrelated sample document).
