@@ -38,6 +38,8 @@ permission is prohibited.
    - [Summary of pitfalls](#summary-of-pitfalls)
 2. [Compatibility and environmental considerations](#compatibility)
    - [ADDRESS and the default environment](#address)
+   - [ISPF](#ispf)
+   - [System REXX](#system-rexx)
    - [Environmental factors](#environmental-factors)
    - [I/O model](#io-model)
    - [PARSE SOURCE and VERSION](#parse-source-and-version)
@@ -278,7 +280,7 @@ end
 ```
 
 See [Continuation](#continuation) below (Figures 2 and 3) for the
-continuation pitfalls specific to `OUTTRAP`'s own argument list.
+pitfalls specific to `OUTTRAP`'s own argument list.
 
 Valid I/O redirect types in the `WITH` clause are `NORMAL`, `STEM`,
 `STREAM`, and `USING` — `STRING` is not a valid type. Of these, `USING`
@@ -501,9 +503,34 @@ below for how to detect which side you're on).
 > s~close
 > ```
 >
-> Call `~supplier` only once per stream and keep the returned object:
-> calling it a second time on the same stream picks up from wherever the
-> first supplier left the read position, silently skipping lines.
+> Requesting more than one supplier from the same stream is safe only
+> if you account for this: creating a supplier consumes a line from
+> the stream to prime its first item, so each one's starting position
+> is fixed at creation time, not when you start looping over it. That
+> consumed line isn't gone for everyone, though: every supplier draws
+> from one shared recorded sequence of the lines already pulled off
+> the stream, not its own independent copy of the file, so a line one
+> supplier's creation consumed is still there for another supplier
+> positioned to reach it:
+>
+> ```rexx
+> s1 = mystream~supplier
+> s2 = mystream~supplier
+> do while s1~available     -- reads every line in the file
+>     say s1~item
+>     s1~next
+> end
+> do while s2~available     -- reads every line EXCEPT the first --
+>     say s2~item           -- s1's creation already consumed that one
+>     s2~next
+> end
+> ```
+>
+> `s1`, created first, reads the entire file when looped. `s2`, created
+> immediately after, already starts one line further in — whatever
+> `s1`'s creation alone consumed — so its loop silently skips that
+> line, even though `s2~next` is never called until after `s1`'s loop
+> finishes.
 
 The safest thing is to encapsulate your input/output code and then
 take advantage of whatever facilities may exist in each target
@@ -596,7 +623,7 @@ meet:
 | OREXX (IBM's Object REXX) | `OBJREXX` | `6.00` | *Object REXX Reference*, OS/2 edition |
 | CMS / TSO/E REXX (classic mainframe, "REXX370") | `REXX370` | `4.00` | *z/OS TSO/E REXX Reference*, SA32-0972, and *z/VM REXX/VM Reference*, SC24-6314 |
 | Regina | `REXX-Regina_<version>` (e.g. `REXX-Regina_3.9.6(MT)`) | `5.00` | *The Regina Rexx Interpreter*, Mark Hessling; ANSI-compliant since Regina 3.1 |
-| ooRexx | `REXX-ooRexx_<version>(MT)_<bits>-bit` (e.g. `REXX-ooRexx_5.2.0(MT)_64-bit`) | `6.06` | *Open Object Rexx Reference*, RexxLA, and verified directly against ooRexx 5.2.0 |
+| ooRexx | `REXX-ooRexx_<version>(MT)_<bits>-bit` (e.g. `REXX-ooRexx_5.2.0(MT)_64-bit`) | `6.06` | *Open Object Rexx Reference*, RexxLA |
 
 Two things worth noticing in this table. First, `level` is *not* the
 interpreter's own version number — it is the Rexx *language level* the
@@ -745,10 +772,9 @@ separator-joined extensions are unavoidable, use something other than
 `/` immediately before a literal `*`.
 
 **`--` as a line comment, running from the `--` to end of line, is not
-an ooRexx extension** — corrected after initially assuming it was: it
-is verified present in both ooRexx 5.2.0 and Regina 3.9.7 (a
-non-object-oriented, ANSI-1996-level classic interpreter), used
-throughout this edition's ooRexx examples above (e.g. the `USE
+an ooRexx extension:** both ooRexx 5.2.0 and Regina 3.9.7 (a
+non-object-oriented, ANSI-1996-level classic interpreter) support it,
+used throughout this edition's ooRexx examples above (e.g. the `USE
 ARG`/`account` example under Variable references) without ever being
 formally introduced until now. Unlike `/* */`, a line comment has no
 closing delimiter to get wrong, so the nesting trap above doesn't
@@ -758,8 +784,7 @@ apply to it.
 both interpreters: `--` is recognized as a comment start
 unconditionally, taking priority over parsing the two characters as
 two separate unary-minus operators — even with no intent to comment
-anything out.** Verified directly against both ooRexx 5.2.0 and
-Regina 3.9.7, identical result on each:
+anything out.** Same result on both:
 
 ```rexx
 a = 5
@@ -780,14 +805,12 @@ interpreter: the expression silently evaluates to the wrong number,
 which is what makes it worth flagging specifically rather than
 trusting the parser to catch it.
 
-**Scope of this trap**: verified present on ooRexx and Regina
-specifically — both are ANSI X3.274-1996-level implementations
-(`PARSE VERSION` level `6.06`/`5.00` respectively, see the table
-above). TSO/E REXX and CMS REXX, the pre-ANSI TRL-2-level (`level
-4.00`) dialects per that same table, support neither `--` as a
-comment nor UTF-8 source at all — confirmed from the author's own
-direct MVS/TSO experience, the same basis cited throughout this
-edition for claims about those two dialects. A source file for either
+**Scope of this trap**: it applies to ooRexx and Regina specifically —
+both are ANSI X3.274-1996-level implementations (`PARSE VERSION`
+level `6.06`/`5.00` respectively, see the table above). TSO/E REXX and
+CMS REXX, the pre-ANSI TRL-2-level (`level 4.00`) dialects per that
+same table, support neither `--` as a comment nor UTF-8 source at
+all. A source file for either
 one is EBCDIC text, not Unicode of any kind, which rules out `--`
 being a portable assumption there independent of whatever ANSI-1996
 does or doesn't say about it. Code that must also run on either
@@ -1138,6 +1161,15 @@ parse var foo template          /* foo is a plain variable */
 parse value foo || bar with template   /* a genuine expression source */
 ```
 
+> **ooRexx note**: many of the built-in functions used alongside
+> `PARSE` — `WORD`, `SUBWORD`, `WORDPOS`, `POS`, `SUBSTR`, `DELWORD`,
+> and others — invoke methods of the `String` class. For most of
+> them the first argument becomes the receiver of the message, e.g.
+> `SUBSTR("abcde", 3, 2)` is `"abcde"~substr(3, 2)`; for `POS`,
+> `WORDPOS`, `LASTPOS`, `INSERT`, and `OVERLAY`, it's the *second*
+> argument instead, e.g. `POS("a", "Haystack", 3)` is
+> `"Haystack"~pos("a", 3)`.
+
 > **ooRexx note**: for pattern matching that outgrows what a `PARSE`
 > template can express cleanly — optional pieces, repetition, character
 > classes, alternatives — ooRexx's `.RegularExpression` class is an
@@ -1211,10 +1243,9 @@ misbehavior.** `PROCEDURE` must be the first instruction actually
 *executed* immediately after its own label is reached via `CALL` (or
 a function invocation); reaching it any other way — straight-line
 fall-through from the code above it — raises `Error 17: Unexpected
-PROCEDURE.` as a `SYNTAX` condition, at the `PROCEDURE` line itself —
-verified with the identical error number and wording on both ooRexx
-5.2.0 and Regina 3.9.7. This is standard Rexx behavior, not
-ooRexx-specific. It's the
+PROCEDURE.` as a `SYNTAX` condition, at the `PROCEDURE` line itself,
+with the same error number and wording on both ooRexx and Regina.
+This is standard Rexx behavior, not ooRexx-specific. It's the
 mechanism *behind* the "notoriously error prone" warning above: an
 unguarded fall-through into a `PROCEDURE`-led subprocedure doesn't
 just risk exposing variables unexpectedly — it crashes outright the
@@ -1256,20 +1287,17 @@ one procedure hides variables with a `PROCEDURE` statement and the
 other procedure leaves all variables exposed by default. This is a
 dangerous practice, and should be avoided.
 
-> **ooRexx note**: `EXPOSE` has two genuinely different meanings
-> depending on where it appears, and they are easy to conflate.
-> `PROCEDURE EXPOSE` (used inside a classic internal subroutine, as
-> above) exposes the *caller's* local variables. `EXPOSE` used as the
-> first statement of a `::METHOD` body exposes that object's *instance*
-> variables — a completely different variable pool, private to the
-> object, not the caller's locals. And **`EXPOSE` is not legal at all
-> inside a `::ROUTINE`** — a routine has no access to any caller's
-> variable pool the way an internal subroutine does. **Corrected after
-> checking directly against ooRexx 5.2.0** (the original wording here
-> asserted a parse-time failure with no basis in an actual test — a
-> real error in its own right, exactly the kind of unverified claim
-> this edition otherwise tries not to make): the whole program parses
-> and starts running normally; the failure only happens at the moment
+> **ooRexx note**: there is an `EXPOSE` clause and an `EXPOSE`
+> instruction, and they are easy to conflate. The `EXPOSE` clause of
+> `PROCEDURE` (used inside a classic internal subroutine, as above)
+> exposes the *caller's* local variables. The `EXPOSE` instruction,
+> used as the first statement of a `::METHOD` body, exposes that
+> object's *instance* variables — a completely different variable
+> pool, private to the object, not the caller's locals. And **the
+> `EXPOSE` instruction is not legal at all inside a `::ROUTINE`** — a
+> routine has no access to any caller's variable pool the way an
+> internal subroutine does. The whole program parses and starts
+> running normally; the failure only happens at the moment
 > `myroutine` is actually *called*, as an ordinary runtime execution
 > error —
 >
@@ -1331,194 +1359,64 @@ If your logic requires enforcing such constraints, you must code them
 explicitly. Note that even a dropped symbol can be used as an "index"
 for a compound variable.
 
-> **ooRexx note**: ooRexx provides real collection classes — `.Array`,
-> `.Directory`, `.Table`, `.Set`, `.Bag`, `.Queue`, `.OrderedCollection`,
-> and others — as a genuine alternative to stem-simulated arrays, with
-> actual bounds/type behavior rather than the silent-anything-goes
-> behavior of a compound variable:
+> **ooRexx note**: `.Array` and other collection objects are safer than
+> stem-simulated arrays — they enforce real bounds instead of a
+> compound variable's silent-anything-goes:
 >
 > ```ooRexx
-> arr = .Array~of('a', 'b', 'c')      -- construct-and-populate in one call
+> arr = .Array~of('a', 'b', 'c')
 > do item over arr
 >     say item
 > end
 > ```
 >
-> Prefer `do item over collection` to `do i = 1 to stem.0` when the
-> data doesn't need positional indexing at all.
+> Prefer `do item over collection` to `do i = 1 to stem.0` when
+> position doesn't matter.
 
 **Indirect/computed stem access has more than one form, and reaching
-for the wrong one doesn't always error.** Standard classic Rexx
-already handles the common case cleanly: a tail that is a single bare
-symbol substitutes that symbol's *current value* directly, with no
-bracket of any kind:
+for the wrong one doesn't always error.** A tail that's a single bare
+symbol substitutes its current value directly, no bracket needed:
 
 ```rexx
 mystem.1 = 'one'; mystem.2 = 'two'; mystem.3 = 'three'
 i = 3
-say mystem.i           /* CORRECT: 'three' -- bare-symbol substitution,
-                           classic Rexx, no bracket needed at all */
+say mystem.i           /* CORRECT: 'three' */
 ```
 
-One form that looks plausible by analogy is a genuine pitfall in every
-Rexx dialect, but not the identical failure in each — checked directly
-on both ooRexx 5.2.0 and Regina 3.9.7:
+`mystem.(i)` looks like it should work the same way but is a real
+pitfall in both dialects, with different failures: ooRexx parses it
+as a call to a routine named `MYSTEM.` and fails with `Error 43.1`;
+Regina instead falls through to an external command lookup. Neither
+does array indexing — don't use this form.
 
-```rexx
-say mystem.(i)
-```
+> **ooRexx note**: `mystem[i]` and `mystem.[i]` are ooRexx-only
+> (classic Rexx's lexer has no meaning for `[`/`]` at all — Regina
+> fails at parse time with `Error 13.1`). Bracket notation sends a
+> `[]` message, and what it does depends on the receiver: on a
+> `.String` it's character extraction (`"abc"[2]` is `"b"`); on a
+> `.Stem` it's an alternate way to build a tail from comma-separated
+> expressions (`a.[1+2, 3+4]` assigns `a.3.7`) — not positional
+> indexing. So `mystem[i]` (no trailing dot) hits a dropped simple
+> variable, which evaluates to its own name `"MYSTEM"`, and `[i]` (3)
+> silently returns `"S"` — a real value, just the wrong one.
+> `mystem.[i]` (trailing dot — the real Stem object) is the form that
+> actually returns `'three'`.
 
-On ooRexx this is parsed as a call to a routine literally named
-`MYSTEM.` (the trailing dot included) and fails internally with
-`Error 43.1: Could not find routine "MYSTEM."` — no attempt is made to
-reach outside the interpreter. On Regina the same unresolved-routine
-situation instead falls through to an *external* command lookup: the
-name gets handed to the operating system, which reports its own
-"`'MYSTEM.' is not recognized as an internal or external command`" —
-a shell-level failure, not a Rexx-level `Error 43` at all. Both are
-definitely wrong, and neither does what the analogy to array indexing
-suggests, but don't assume the specific error (or even whether the
-failure stays inside the interpreter) is portable — only that this
-form doesn't work anywhere.
+A third, unrelated trap: a compound variable used as a tail component
+isn't re-parsed as a compound reference — the tail is split on
+periods first. `orphans.orphans.0 = 'first'` doesn't produce
+`orphans.1`; it always clobbers the same literal tail
+`ORPHANS.ORPHANS.0`. Same fix as above: copy the index into a plain
+variable first, then use that (`n = orphans.0; orphans.n = value`).
 
-> **ooRexx note**: two more forms that look plausible by analogy —
-> `mystem[i]` and `mystem.[i]` — are valid *only* in ooRexx; classic
-> Rexx's own lexer has no defined meaning for `[`/`]` at all, so a
-> classic-Rexx program can't reach for either by mistake in the first
-> place — confirmed directly: `mystem[i]` on Regina fails at the lexer
-> itself, before any execution, with `Error 13.1: Invalid character in
-> program (('5b'X)` (`5B` hex is `[`), while the identical line on
-> ooRexx runs and returns `"S"` (character 3 of the dropped symbol's
-> own name `MYSTEM`), exactly as described below. In ooRexx, both
-> parse and run: `[]` is genuinely one uniform
-> mechanism — bracket notation sends a message named `[]` to the
-> receiver, with whatever's inside the brackets passed as its argument
-> list — but what that list *means* is entirely up to the receiving
-> object's own `[]` method, and the two below interpret it very
-> differently:
->
-> - On a `.String`, `[]` is character/substring extraction (ooRexx
->   Language Reference §5.1.7.22): `"abc"[2]` is `"b"`; with a second,
->   comma-separated argument, `"abc"[2,4]` is a substring, `"bc"`.
-> - On a `.Stem`, `[]` is documented separately, under "Evaluated
->   Compound Variables" (§1.13.5.1), as an alternate way to *construct a
->   compound-variable tail*: each comma-separated expression is
->   evaluated to a string, and the results are joined with periods to
->   form the tail — `a.[1+2, 3+4]` assigns `a.3.7`, exactly as if you
->   had written that dotted tail yourself. It is not positional
->   "element N" indexing the way `.Array`'s `[]` is.
->
-> ```ooRexx
-> say mystem[i]           /* NOT AN ERROR -- and that's the trap: this is
->                             a perfectly legitimate character selection,
->                             just not the one intended. 'mystem' with no
->                             trailing dot is a plain simple variable; it
->                             was never assigned, so it's a dropped
->                             symbol and evaluates to its own name, the
->                             string "MYSTEM"; [] on a String correctly
->                             selects a character -- "S" (character 3 of
->                             "MYSTEM"). Nothing here is wrong except the
->                             programmer's expectation that this reaches
->                             the stem element instead */
->
-> say mystem.[i]          /* CORRECT: 'three'. 'mystem.' -- the stem
->                             itself, trailing dot, no tail -- is always
->                             already bound to a genuine Stem object
->                             (ooRexx Language Reference §1.13.4); its []
->                             method takes i, evaluates it, and uses the
->                             result directly as the tail -- the single-
->                             expression case of the same tail-building
->                             mechanism as the two-expression example
->                             above */
-> ```
-
-A third, unrelated trap: using another compound variable directly as
-a tail component looks like it should nest, but the tail is split on
-periods into independent pieces *before* any substitution happens — a
-piece is never itself re-parsed as a compound-variable reference. This
-is standard Rexx behavior in both dialects, no brackets involved:
-
-```rexx
-orphans.0 = 0
-orphans.0 = orphans.0 + 1
-orphans.orphans.0 = 'first'      /* WRONG: not "orphans.1" -- every
-                                     iteration clobbers the SAME fixed
-                                     derived tail ORPHANS.ORPHANS.0 */
-```
-
-The safe pattern here too: copy the index into a plain simple
-variable first, then use that variable as the tail (`n = orphans.0;
-orphans.n = value`).
-
-> **ooRexx note**: a stem's own item count sidesteps maintaining a
-> manual counter tail altogether — `orphans.` is always a genuine Stem
-> object (as established above), and `~items` is a read-only query
-> reporting how many of its compound variables are currently set.
-> `~items` itself does not add, remove, or change anything — it's the
-> tail *assignment* that changes the count; `~items` only reports
-> whatever that count happens to be at the moment you call it, with
-> nothing for the program to track by hand:
->
-> ```ooRexx
-> orphans.[orphans.~items] = 'first'   -- items was 0; sets tail "0"
-> orphans.[orphans.~items] = 'second'  -- items is now 1; sets tail "1"
-> orphans.[orphans.~items] = 'third'   -- items is now 2; sets tail "2"
-> ```
->
-> The stem starts out empty, with `~items` equal to `0` — so the very
-> first element written this way lands in tail `"0"`, not tail `"1"`:
-> the bracket expression evaluates `~items` first, *then* the
-> assignment runs and is what makes that tail exist, bumping the count
-> for next time. This differs from the classic convention, where tail
-> `0` is reserved for a manually-maintained counter and data start at
-> `1`. The two schemes are not interchangeable; pick one and stay
-> consistent within a given stem. Add `+1` to get the classic 1-based
-> numbering instead:
->
-> ```ooRexx
-> orphans.[orphans.~items+1] = 'first'   -- items was 0; sets tail "1"
-> orphans.[orphans.~items+1] = 'second'  -- items is now 1; sets tail "2"
-> orphans.[orphans.~items+1] = 'third'   -- items is now 2; sets tail "3"
-> ```
->
-> This still relies on the same discipline as the 0-based form: every
-> tail has to come from this exact idiom, with nothing added or
-> removed out of band, or the numbering silently stops meaning what
-> you think it means.
->
-> A Stem is an associative array — a string-indexed map — which is not
-> the same thing as an array, even when every tail happens to be a
-> contiguous integer: that's a simulated, conventional usage built on
-> top of a fundamentally different structure, the way a flight
-> simulator imitates flying without being an airplane. Nothing stops a
-> program from setting `orphans.foo` or `orphans.17` directly alongside
-> the sequence above. Don't use `~items` as a loop bound
-> (`do i = 1 to orphans.~items`) except in the narrow case where every
-> tail was built by exactly this idiom and none was added or removed
-> out of band. The general, safe way to visit every populated tail is
-> `do tail over orphans.~allIndexes` (the tail names) or `do value over
-> orphans.~allItems` (the values directly, when the tail names
-> themselves don't matter):
->
-> ```ooRexx
-> do tail over orphans.~allIndexes
->     say tail':' orphans.[tail]
-> end
-> ```
->
-> If what's actually wanted is array-style append — add an element and
-> let the collection work out the next position itself — a real
-> `.Array` and its own `~append` method do that directly, with none of
-> the discipline the `~items`/`~items+1` idioms above depend on.
-> `orphans.[orphans.~items] = value` only imitates the effect, for a
-> Stem built consistently one way or the other; it is not itself an
-> append operation. An `.Array` also comes with `~first`/`~last` (the
-> index of the first/last item, or `.nil` if empty) and
-> `~firstItem`/`~lastItem` (the item itself) — reading the ends of the
-> collection this way needs no bracket arithmetic and no assumption
-> about how it was populated, unlike reaching for tail `"0"` or
-> `orphans.~items - 1` on a Stem. Unless the data genuinely needs a
-> Stem's string-keyed lookup, prefer the array.
+> **ooRexx note**: `~items` is a read-only count of a Stem's
+> currently-set compound variables. However, it is still cleaner to
+> use collection objects: a real `.Array` and its `~append` method add
+> an element directly, and `~first`/`~last`/`~firstItem`/`~lastItem`
+> read the ends — no arithmetic, no assumption about how the stem was
+> populated. Prefer `.Array` unless the data genuinely needs a Stem's
+> string-keyed lookup; to visit every populated tail on a Stem anyway,
+> use `do tail over orphans.~allIndexes`, not a loop to `~items`.
 
 > **ooRexx note**: `.stem~new` creates a fresh, otherwise-anonymous Stem
 > object, and it is a **genuinely different object** from the Stem
@@ -1697,62 +1595,43 @@ with compound variables. However, there are a few pitfalls.
 **When all you need is to read or set a variable by name, prefer
 `VALUE()` to `INTERPRET`.** `VALUE(name)` reads the variable named
 `name`; `VALUE(name, newvalue)` sets it and returns the *old* value.
-`VALUE` also takes an optional third argument, `selector`, naming a
-variable pool other than the program's own — something `INTERPRET`
-has no direct equivalent for at all. The selector string itself is
-dialect-specific: OS/2 classic Rexx uses `OS2ENVIRONMENT` (Figure 2
-above); ooRexx uses plain `ENVIRONMENT` instead (verified directly:
-`OS2ENVIRONMENT` raises Error 40 on ooRexx, `ENVIRONMENT` works).
-Check the target dialect's own selector name rather than assuming
-either applies elsewhere. The argument itself is not universal, either:
-REXX/VM under GCS (see [ADDRESS and the default environment](#address)
-above) does not support `selector` at all, only the two-argument form.
-`INTERPRET` can achieve the same *kind* of result — setting a
-variable whose name is only known at run time — but not the same way,
-and the difference matters the moment the name isn't a value you
-fully control. Doing the actual same task both ways, with the same
-(malicious) name string, verified identically on both ooRexx 5.2.0
-and Regina 3.9.7:
+A third argument, `selector`, names a variable pool other than the
+program's own — dialect-specific (`OS2ENVIRONMENT` on OS/2 classic
+Rexx, plain `ENVIRONMENT` on ooRexx; unsupported under REXX/VM GCS,
+which only takes the two-argument form) — and `INTERPRET` has no
+equivalent for it at all. The difference matters the moment a
+variable name isn't fully under your control. Same task, same
+malicious name, both ways:
 
 ```rexx
 foo = 'bar=1; call SomeRoutine; x'
 
-/* Way 1: build a string and INTERPRET it -- foo'=7' abuts (concate-
-   nates) foo's value with the literal "=7" first, THEN runs the
-   result as source: */
+/* INTERPRET: foo'=7' concatenates first, then runs the result as
+   source */
 interpret foo'=7'
 say bar        /* 1 */
-say x          /* 7 -- absorbs the trailing "=7" harmlessly */
-               /* but along the way, "call SomeRoutine" -- the
-                  clause hidden in the middle of foo's value -- also
-                  ran, printing its own message: injection succeeded */
+say x          /* 7 -- but "call SomeRoutine", hidden in foo's value,
+                  also ran: injection succeeded */
 
-/* Way 2: VALUE(name, newvalue) -- foo's value is used ONLY as a
-   variable name, never as source text to execute: */
-baz = value(foo, 7)   /* raises a SYNTAX condition immediately --
-                          "bar=1; call SomeRoutine; x" is not a legal
-                          variable name -- nothing executes at all,
-                          not even the harmless-looking bar=1 part */
+/* VALUE(): foo's value is used only as a name, never as source */
+baz = value(foo, 7)   /* SYNTAX condition -- not a legal variable
+                          name -- nothing executes */
 ```
 
-Both lines are asked to do the identical job: set the variable named
-by `foo` to `7`. `INTERPRET` gets there by building a whole clause and
-running it — three clauses, actually, since `foo`'s value already
-contained two semicolons — and has no way to tell "the part of this
-string that's supposed to be a name" from "the part that's supposed
-to be code," because after concatenation there's only ever one
-string, containing all of it. `VALUE()` never blurs that line: its
-first argument is always and only a name, checked as one, so a string
-that isn't a legal name is refused outright rather than executed.
-Reserve `INTERPRET` for genuinely dynamic code — constructing a whole
-statement or expression at run time — not as a heavier substitute for
-a single indirect variable reference.
+`INTERPRET` builds a whole clause and runs it, so it cannot tell "the
+part that's a name" from "the part that's code" — after concatenation
+there's only one string. `VALUE()`'s first argument is always and
+only a name, checked as one, so an illegal name is refused rather
+than executed. Reserve `INTERPRET` for genuinely dynamic code, not as
+a heavier substitute for an indirect variable reference.
 
-If you call a procedure that has an `EXPOSE` clause on the
-`PROCEDURE` statement, it will only have access to the variables that
-you exposed. If you pass an argument containing the name of some
-other variable, the code will only be able to access a local version
-of that variable.
+`PROCEDURE` hides all of the caller's variables except those named in
+an `EXPOSE` clause. Each name there is either a symbol — an ordinary
+variable name — or a parenthesized symbol, whose value is read as a
+further, whitespace-separated list of names to expose. So if you pass
+an argument containing the name of some other variable, and that name
+isn't reached by either form, code inside the procedure gets only a
+local variable of that name, not the caller's.
 
 If you call a procedure that requires a variable name as a parameter,
 and use a dropped symbol to represent its own name for that parameter,
@@ -1774,13 +1653,9 @@ you will probably get incorrect results on your second time through.
 > numbers are themselves immutable values.
 >
 > **`PARSE ARG` is the inverse risk.** `PARSE` (in every form — `PARSE
-> ARG`, `PARSE VAR`, `PARSE PULL`, `PARSE VALUE`) does template-based
-> string matching, full stop; it has no branch for "already an object,
-> pass it through." Handed anything that isn't already a string, it
-> unconditionally forces the argument through that object's default
-> string representation before matching begins — silently discarding
-> the real object and replacing it with a generic placeholder, with no
-> error raised at the `PARSE` statement itself:
+> ARG`, `PARSE VAR`, `PARSE PULL`, `PARSE VALUE`) operates on strings;
+> handed anything else, it sends the object a `STRING` message and
+> parses whatever comes back:
 >
 > ```ooRexx
 > call PassAnObject .directory~new
@@ -1789,8 +1664,7 @@ you will probably get incorrect results on your second time through.
 > PassAnObject: procedure
 >     parse arg d
 >     say d~class     -- "The String class" -- not Directory
->     say d           -- "a Directory" -- the placeholder text itself,
->                         not the object's contents
+>     say d           -- "a Directory" -- not the object's contents
 >     d~put('x', 'k') -- Error 97.1: Object "a Directory" does not
 >                         understand message "PUT"
 > ```
@@ -1830,10 +1704,9 @@ not) instead of a real number, and which one is exact, if either, is
 a per-implementation choice, not a platform split — CMS's `LINES()`
 is exact for disk files but its `CHARS()` never is; ooRexx's and
 Regina's `CHARS()` are both exact for disk files but their own
-`LINES()` isn't (verified against a real 29-byte, 3-line disk file:
-both report `chars()` as exactly `29`, but `lines()` as `1` on both —
-not the real line count — regardless of how many lines actually
-remain unread):
+`LINES()` isn't: on a real 29-byte, 3-line disk file, both report
+`chars()` as exactly `29`, but `lines()` as `1` on both — not the real
+line count — regardless of how many lines actually remain unread:
 
 ```rexx
 /* WRONG -- assumes lines() gives an exact count */
@@ -1862,10 +1735,10 @@ reading past the end.
 
 **`LINEOUT` opens in append mode by default; a full-file overwrite
 needs an explicit replace first.** This is standard Rexx behavior, not
-an ooRexx quirk — verified identically on ooRexx 5.2.0 and Regina
-3.9.7: two separate `LINEOUT` calls to the same file, each followed by
-closing it, with no `REPLACE` in between, leave both writes in the
-file rather than the second overwriting the first. It's a real bug
+an ooRexx quirk, and holds on both ooRexx and Regina: two separate
+`LINEOUT` calls to the same file, each followed by closing it, with no
+`REPLACE` in between, leave both writes in the file rather than the
+second overwriting the first. It's a real bug
 pattern, not a hypothetical: a script
 that deletes a file and then writes it fresh with repeated `LINEOUT`
 calls will silently duplicate content the moment the delete step ever
@@ -2059,14 +1932,14 @@ directly by me.
 - *The Regina Rexx Interpreter*, Mark Hessling (the core interpreter reference, covering `PARSE VERSION` output and ANSI compliance level), <https://regina-rexx.sourceforge.io/>
 - Regina REXX RegUtil Reference (the RexxUtil-equivalent package bundled with Regina), <https://regina-rexx.sourceforge.io/>
 - *Open Object Rexx Reference*, RexxLA, <https://www.oorexx.org/docs/rexxref/>
-- TSO Extensions Version 2 REXX Reference / z/OS TSO/E REXX Reference, SC28-1883 / SA32-0972 (three editions consulted: SC28-1883-0, December 1988; SC28-1883-4, August 1991; and the current z/OS 2.5 edition, SA32-0972-50, 2021 — the earliest documents a noticeably smaller host command environment table than the other two, which agree word for word)
+- TSO Extensions Version 2 REXX Reference / z/OS TSO/E REXX Reference, SC28-1883 / SA32-0972 (three editions consulted: SC28-1883-0, December 1988; SC28-1883-4, August 1991; and the current z/OS 3.2 edition, SA32-0972-70, <https://www.ibm.com/docs/en/SSLTBW_3.2.0/pdf/ikja300_v3r2.pdf> — the earliest documents a noticeably smaller host command environment table than the other two, which agree word for word)
 - TSO Extensions Version 2 REXX User's Guide, SC28-1882
 - TSO/E Command Reference, IBM Corp., SC28-1969 (documents `EDIT` and `TEST` as TSO commands, including the specific `EXEC` subcommand behavior each imposes on a REXX exec it launches — a separate manual from the REXX Reference above, which does not cover either command)
 - z/OS MVS IPCS User's Guide, IBM Corp., SA23-1384 (documents the `ADDRESS IPCS` instruction and its per-mode availability within an IPCS session — a separate manual from the REXX Reference above, which does not cover IPCS)
 - ISPF Dialog Developer's Guide and Reference, IBM Corp., SC34-4821 (does not independently state the REXX host command environment list for ISPF; see the TSO/E REXX Reference above for that)
 - z/OS Using REXX and z/OS UNIX System Services, IBM Corp., SA23-2283 (documents TSO/E REXX's behavior in the OMVS shell separately from the TSO/E REXX Reference above)
 - z/OS MVS Programming: Authorized Assembler Services Guide, IBM Corp., SA23-1371 (current z/OS 3.2 edition, SA23-1371-70) — the System REXX chapter documents the `AXREXX` macro, `MODIFY AXR`/`SYSREXX` operator commands, the `AXR`/`AXR01`–`AXR08` address-space structure, the `REXXLIB` A–I exec-name reservation, and console-directed `SAY`/`TRACE` output; a separate manual from the REXX Reference above, which does not cover System REXX at all
-- z/VM REXX/VM Reference, IBM Corp., SC24-6314
+- z/VM REXX/VM Reference, IBM Corp., current z/VM 7.4 edition, SC24-6314-74, <https://www.vm.ibm.com/library/740pdfs/74631400.pdf>
 - The REXX Language: A Practical Approach to Programming, 2nd Edition. By Michael F. Cowlishaw (Prentice-Hall, Inc., a division of Simon & Schuster), Englewood Cliffs, New Jersey 07632, ISBN 0-13-780651-5
 - Rexx brief history, Michael F. Cowlishaw, <https://speleotrove.com/rexxhist/rexxhistory.html> (source for the REX-to-REXX naming history and early VM/SP release dates)
 - Open Object Rexx (ooRexx) Reference, The RexxLA/Open Object Rexx project, <https://www.oorexx.org/>

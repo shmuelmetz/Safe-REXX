@@ -26,3 +26,10 @@ notes, including an ambiguous filename worth knowing about:
 `NASPA/SAFEREXX.*` is actually the *Enterprise* paper's own archived
 copy, not Desktop's, despite the two papers once sharing that working
 filename before one was later disambiguated to `saferexxe`.
+
+See [PUBLICATION-HISTORY.md](PUBLICATION-HISTORY.md) for the fuller
+origin and reprint story (the 1993 pitch, the copyright dispute that
+moved the piece from one Miller Freeman editor to another, and the
+twenty-year reprint tail through 2013) — reconstructed from the
+author's own mail archive, not something that belongs in the paper's
+own body text.
