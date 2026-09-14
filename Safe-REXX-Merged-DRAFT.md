@@ -40,6 +40,7 @@ permission is prohibited.
    - [ADDRESS and the default environment](#address)
    - [ISPF](#ispf)
    - [System REXX](#system-rexx)
+   - [OS/2, eComStation, and ArcaOS: Classic REXX and OREXX](#os2-orexx)
    - [Environmental factors](#environmental-factors)
    - [I/O model](#io-model)
    - [PARSE SOURCE and VERSION](#parse-source-and-version)
@@ -366,6 +367,34 @@ stop it is the operator `STOP AXR` command, not a normal task cancel.
 An exec that hangs or loops here is a harder problem to walk back from
 than the equivalent mistake under TSO/E, where the user's own session
 can simply be canceled or logged off.
+
+### <a id="os2-orexx"></a>OS/2, eComStation, and ArcaOS: Classic REXX and OREXX
+
+eComStation and ArcaOS are direct continuations of OS/2 — the same
+Classic REXX (SAA REXX, IBM's Procedures Language 2/REXX) and the same
+OREXX (Object REXX) that shipped on OS/2 carry forward unchanged on
+both, and nothing below needs to distinguish among the three; "OS/2"
+covers all of them.
+
+OREXX does not replace Classic REXX — the two interpreters install
+side by side, and which one runs a given `.CMD` file depends on
+association and invocation, not on which one happens to be present.
+Use the `PARSE VERSION` check in the interpreter-identification table
+above to tell them apart at runtime rather than assuming from context.
+
+The two interpreters keep separate online reference manuals, both
+installed together: `CREXX.INF` — the name is short for Classic
+REXX — remains the Classic REXX reference, distinct from OREXX's own
+manual, so installing OREXX does not leave Classic REXX undocumented
+or paper over which interpreter a given piece of reference material
+actually describes.
+
+The OREXX guidance in this edition is drawn from the Object REXX
+Reference manuals cited in the References section, not from direct
+testing against a live OREXX interpreter the way ooRexx and Regina
+claims elsewhere in this edition are — OREXX has been out of IBM
+support for many years, and no live copy was available to verify
+behavior against while preparing this edition.
 
 ### <a id="environmental-factors"></a>Environmental factors
 

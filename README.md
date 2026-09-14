@@ -15,9 +15,12 @@ merge of both source papers, checked against every file in this repo
 including the original 1993 submissions and an intermediate 1997-98
 web snapshot, not just the two 2023 HTML files, which found one
 genuinely dropped section and restored it; ooRexx guidance grounded in
-`AI-Priming/ooRexx/RULES.md`) and what's still pending (a fuller
-ArcaOS/OREXX section — the ISPF and System REXX sections are both now
-done). The original
+`AI-Priming/ooRexx/RULES.md`). The ISPF, System REXX, and
+OS/2/eComStation/ArcaOS (Classic REXX and OREXX) sections are all now
+done — the OREXX guidance is drawn from the Object REXX Reference
+manuals rather than a live interpreter, since OREXX has been out of
+IBM support for years and no live copy was available to test against.
+The original
 source files, in several formats and archival copies from both
 publication venues, remain in this repo's subdirectories
 (`NASPA/`, `OS2DEV/`, `Attached/`, `TSM/`, `$REXX/`, `Safe REXX/`) for
