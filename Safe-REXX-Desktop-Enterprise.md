@@ -388,7 +388,12 @@ installed together: `CREXX.INF` — the name is short for Classic
 REXX — remains the Classic REXX reference, distinct from OREXX's own
 manual, so installing OREXX does not leave Classic REXX undocumented
 or paper over which interpreter a given piece of reference material
-actually describes.
+actually describes. This OS/2 naming convention (`CREXX.INF`,
+`crexx.*`) has nothing to do with
+[Adrian Sutherland's cREXX](https://github.com/adesutherland/CREXX),
+an unrelated, independently-named open-source REXX interpreter
+project written in C — the two "CREXX" names are coincidental, not
+the same software or the same lineage.
 
 The OREXX guidance in this edition is drawn from the Object REXX
 Reference manuals cited in the References section, not from direct

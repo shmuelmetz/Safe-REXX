@@ -36,3 +36,9 @@ moved the piece from one Miller Freeman editor to another, and the
 twenty-year reprint tail through 2013) — reconstructed from the
 author's own mail archive, not something that belongs in the paper's
 own body text.
+
+## License
+
+MIT (same as [AI-Priming](https://github.com/shmuelmetz/AI-Priming)),
+provisionally — subject to change once submission terms are discussed
+with RexxLA.
