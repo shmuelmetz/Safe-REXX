@@ -91,6 +91,11 @@ methods, and message-send syntax on top. Everything in this edition
 that applies to classic Rexx applies unchanged to ooRexx unless a
 specific note says otherwise.
 
+For Cowlishaw's own account of REXX's origins and evolution — his
+1984 paper in *IBM Systems Journal*, a 2004 interview, and a
+forty-year retrospective — see RexxInfo.org's [history links
+page](https://rexxinfo.org/links/index_links.html#History).
+
 ### <a id="platforms-and-standards"></a>Platforms and standards conformance
 
 The American National Standards Institute published a Rexx standard,
