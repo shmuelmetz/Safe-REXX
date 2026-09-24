@@ -421,7 +421,7 @@ If you must use binary or hexadecimal constants for character data,
 be aware that character encoding varies among systems, and not just
 between EBCDIC and ASCII. CMS and TSO use EBCDIC. Most other systems
 use some combination of plain 7-bit ASCII, an 8-bit code page
-extending ASCII (e.g. Latin-1, Windows-1252 — the specific extension
+extending ASCII (e.g., Latin-1, Windows-1252 — the specific extension
 matters, since they disagree above code point 127), and Unicode
 (typically UTF-8 or UTF-16) — which one depends on the specific
 system, its locale/code-page configuration, and the file or stream in
@@ -662,8 +662,8 @@ meet:
 | OS/2 classic REXX (Procedures Language 2/REXX) | `REXXSAA` | `4.00` | *OS/2 Procedures Language 2/REXX Reference*, S10G-6268 |
 | OREXX (IBM's Object REXX) | `OBJREXX` | `6.00` | *Object REXX Reference*, OS/2 edition |
 | CMS / TSO/E REXX (classic mainframe, "REXX370") | `REXX370` | `4.00` | *z/OS TSO/E REXX Reference*, SA32-0972, and *z/VM REXX/VM Reference*, SC24-6314 |
-| Regina | `REXX-Regina_<version>` (e.g. `REXX-Regina_3.9.6(MT)`) | `5.00` | *The Regina Rexx Interpreter*, Mark Hessling; ANSI-compliant since Regina 3.1 |
-| ooRexx | `REXX-ooRexx_<version>(MT)_<bits>-bit` (e.g. `REXX-ooRexx_5.2.0(MT)_64-bit`) | `6.06` | *Open Object Rexx Reference*, RexxLA |
+| Regina | `REXX-Regina_<version>` (e.g., `REXX-Regina_3.9.6(MT)`) | `5.00` | *The Regina Rexx Interpreter*, Mark Hessling; ANSI-compliant since Regina 3.1 |
+| ooRexx | `REXX-ooRexx_<version>(MT)_<bits>-bit` (e.g., `REXX-ooRexx_5.2.0(MT)_64-bit`) | `6.06` | *Open Object Rexx Reference*, RexxLA |
 
 Two things worth noticing in this table. First, `level` is *not* the
 interpreter's own version number — it is the Rexx *language level* the
@@ -814,7 +814,7 @@ separator-joined extensions are unavoidable, use something other than
 **`--` as a line comment, running from the `--` to end of line, is not
 an ooRexx extension:** both ooRexx 5.2.0 and Regina 3.9.7 (a
 non-object-oriented, ANSI-1996-level classic interpreter) support it,
-used throughout this edition's ooRexx examples above (e.g. the `USE
+used throughout this edition's ooRexx examples above (e.g., the `USE
 ARG`/`account` example under Variable references) without ever being
 formally introduced until now. Unlike `/* */`, a line comment has no
 closing delimiter to get wrong, so the nesting trap above doesn't
@@ -1204,10 +1204,10 @@ parse value foo || bar with template   /* a genuine expression source */
 > **ooRexx note**: many of the built-in functions used alongside
 > `PARSE` — `WORD`, `SUBWORD`, `WORDPOS`, `POS`, `SUBSTR`, `DELWORD`,
 > and others — invoke methods of the `String` class. For most of
-> them the first argument becomes the receiver of the message, e.g.
+> them the first argument becomes the receiver of the message, e.g.,
 > `SUBSTR("abcde", 3, 2)` is `"abcde"~substr(3, 2)`; for `POS`,
 > `WORDPOS`, `LASTPOS`, `INSERT`, and `OVERLAY`, it's the *second*
-> argument instead, e.g. `POS("a", "Haystack", 3)` is
+> argument instead, e.g., `POS("a", "Haystack", 3)` is
 > `"Haystack"~pos("a", 3)`.
 
 > **ooRexx note**: for pattern matching that outgrows what a `PARSE`
@@ -1595,7 +1595,7 @@ symbol that's still dropped when your logic expected a real variable.
 > return value not assigned to anything — is handled the same way as a
 > `CALL` to a routine with no `RETURN` value: if the invoked method
 > returns nothing at all (not even `.nil` — several Collection methods,
-> e.g. `~put`, are defined to return no result object), `result` is
+> e.g., `~put`, are defined to return no result object), `result` is
 > dropped again — the variable you just assigned reverts to being a bare
 > symbol. This breaks the moment any bare message-send whose method
 > returns nothing executes — including the ordinary case of building up
