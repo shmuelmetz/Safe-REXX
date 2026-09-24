@@ -59,12 +59,13 @@ permission is prohibited.
    - [Variable references](#variable-references)
    - [I/O portability](#io-pitfalls)
 4. [ooRexx-specific pitfalls](#oorexx-specific-pitfalls)
-5. [Debugging: reach for TRACE before guessing from black-box behavior](#debugging)
-6. [Recapitulation](#recapitulation)
-7. [References](#references)
-8. [Notes and trademarks](#notes-and-trademarks)
-9. [About the author](#about-the-author)
-10. [Colophon](#colophon)
+5. [cREXX](#crexx)
+6. [Debugging: reach for TRACE before guessing from black-box behavior](#debugging)
+7. [Recapitulation](#recapitulation)
+8. [References](#references)
+9. [Notes and trademarks](#notes-and-trademarks)
+10. [About the author](#about-the-author)
+11. [Colophon](#colophon)
 
 ---
 
@@ -1910,6 +1911,118 @@ text = str~translate~space~strip
 
 ---
 
+## <a id="crexx"></a>cREXX
+
+cREXX is a Rexx-family implementation built as a compiler to bytecode.
+Source is compiled to an assembler form, assembled into bytecode, and
+run by a virtual machine; the toolchain is `rxc`, `rxas`, `rxvm`, and a
+`crexx` driver that runs the three in sequence. Its current language,
+Level B, is *not* Classic Rexx, and much of what this article says
+about portability across Classic Rexx, TSO/E REXX, CMS, Regina, and
+ooRexx does not transfer to it. This section lists only the differences
+that change what a program means. The Release 1 line of cREXX is in
+beta, so the details below may change.
+
+### Levels
+
+cREXX names its language surfaces as levels. Level B is the supported
+language: source files normally begin with `options levelb` and use the
+extension `.crexx`; values have types (`.string`, `.int`, `.float`,
+`.decimal`, `.boolean`, `.binary`, `.object`, `.void`); arrays are
+declared from typed values (`.string[]`); modules use `namespace`,
+`import`, and `expose`; and procedure signatures are checked by the
+compiler. Level G adds tasks and `DO PARALLEL` behind `OPTIONS LEVELG`
+and is experimental. Level C, Classic Rexx compatibility, is not yet a
+release language: a subset of Classic Rexx is lowered into Level B, and
+a construct outside that subset is rejected with an
+unsupported-shape diagnostic instead of being run. Levels E (ooRexx)
+and N (NetRexx) are targets for syntax highlighting only; cREXX does not
+run ooRexx or NetRexx source.
+
+### Variables first assigned inside a DO block have block scope
+
+In Classic Rexx a block does not scope variables, so a variable assigned
+in either branch of an `IF` is the same variable afterward. In Level B, a
+variable that is first assigned inside a `DO` block and has
+no counterpart in an enclosing scope belongs to that block. Two sibling
+`DO` blocks that each assign `x` therefore create two different
+variables, and a read of `x` after the blocks refers to a third.
+
+```rexx
+/* Classic Rexx: one x, whichever branch ran */
+if flag = "1" then do
+  x = "from-if"
+end
+else do
+  x = "from-else"
+end
+say x            /* from-if or from-else */
+```
+
+The same code compiled as Level B assigns to block-local variables and
+the compiler warns `NOT_IN_SAME_SCOPE` for the read after the blocks. To
+get Classic behavior, introduce the variable before the conditional:
+
+```crexx-b
+options levelb
+import rxfnsb
+
+Foo: procedure = .string
+  arg flag = .string
+  x = .string              /* declared in the procedure's own scope */
+  if flag = "1" then do
+    x = "from-if"
+  end
+  else do
+    x = "from-else"
+  end
+  return x
+```
+
+The block rule applies to `DO` blocks. A single-instruction branch
+(`if cond then x = 10`, with no `DO`) is handled differently by design:
+an untyped assignment there binds directly to, and updates, the variable
+in the enclosing scope, including a module-global one.
+
+### `PROCEDURE EXPOSE` and `ARG EXPOSE` do not mean what they mean in Classic Rexx
+
+In Classic Rexx, `PROCEDURE EXPOSE` makes named variables of the caller
+visible to the called routine. In Level B it means something else:
+`PROCEDURE EXPOSE` gives the procedure access to *module-global*
+variables, listed by name, and a procedure that does not list a global
+variable does not see it unless the module's `NAMESPACE ... EXPOSE`
+list also names it.
+
+Level B provides `ARG EXPOSE` for updating a caller's variable: a plain
+`arg name = type` parameter is passed by value, and a parameter declared
+with `expose` is passed by reference.
+
+```crexx-b
+bump: procedure = .void
+  arg expose value = .int   /* by reference: updates the caller's variable */
+  value = value + 1
+  return
+```
+
+Code that reads like Classic Rexx, and that uses either keyword to share
+state, will compile in Level B and share different variables.
+
+### What does not carry over
+
+- This article's guidance about the TSO/E and CMS environments, their
+  variable pools, `EXECIO`, and `PARSE SOURCE` results does not apply
+  to cREXX Level B. The cREXX port to z/OS is experimental; integration with
+  IBM REXX variable pools and general `ADDRESS TSO` commands is not yet
+  available in it.
+- Values have types and procedure signatures are checked by the
+  compiler, so a mismatch that Classic Rexx would surface at run time, or
+  never, can be a compile-time error.
+- The classic-Rexx constructs recommended for portability elsewhere in
+  this article are not guaranteed to compile as Level B. Test any code
+  meant to run under cREXX with the cREXX compiler.
+
+---
+
 ## <a id="debugging"></a>Debugging: reach for TRACE before guessing from black-box behavior
 
 `TRACE` is standard Rexx, not an ooRexx feature, and the advice below
@@ -1986,6 +2099,7 @@ directly by me.
 - Josep Maria Blasco's Rexx Parser (AST/element parser for Rexx, ooRexx, and Executor, written in ooRexx itself), <https://github.com/JosepMariaBlasco/rexx-parser>, also distributed as part of RexxLA's net-oo-rexx
 - ANSI X3.274-1996, Information Technology — Programming Language REXX, American National Standards Institute. Section citations in this edition are drawn from RexxLA's hosted copy of the X3J18 committee's document (X3J18-199X, <https://www.rexxla.org/rexxlang/standards/j18pub.pdf>), the last public-review draft before ratification, not the final published ANSI text itself.
 - Classic Rexx built-in function reference (ANSI-1996/TRL-2/z/OS/z/VM comparison chart), rexxinfo.org, <https://rexxinfo.org/reference/articles/classic_rexx_functions_w_nav_menu.html>
+- cREXX, Adrian Sutherland, Peter Jacob, and René Jansen, <https://github.com/adesutherland/CREXX> (the Level B language reference and programming guide under `docs/books/`, including the language-levels, global-variables, and arguments pages, for the Release 1 beta line)
 
 ## <a id="notes-and-trademarks"></a>Notes and trademarks
 
