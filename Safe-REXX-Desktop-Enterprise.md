@@ -1913,63 +1913,25 @@ text = str~translate~space~strip
 
 ## <a id="crexx"></a>cREXX
 
-cREXX is a Rexx-family implementation built as a compiler to bytecode.
-Source is compiled to an assembler form, assembled into bytecode, and
-run by a virtual machine; the toolchain is `rxc`, `rxas`, `rxvm`, and a
-`crexx` driver that runs the three in sequence. Its current language,
-Level B, is *not* Classic Rexx, and much of what this article says
-about portability across Classic Rexx, TSO/E REXX, CMS, Regina, and
-ooRexx does not transfer to it. This section lists only the differences
-that change what a program means. The Release 1 line of cREXX is in
-beta, so the details below may change.
+cREXX Level B, the language of the compiler-to-bytecode implementation
+of that name, is not Classic Rexx, and the recommendations elsewhere in
+this article do not carry over to it. Treat it as a separate dialect,
+and test any code meant to run under it with the cREXX compiler; the
+Release 1 line is in beta, so these recommendations may change.
 
-### Levels
+- **Do not assume Classic Rexx code means the same thing.** cREXX
+  accepts only a subset of Classic Rexx (Level C) and rejects a
+  construct outside that subset with an unsupported-shape diagnostic.
+  Keep code that must remain portable to Classic Rexx in a `.rexx`
+  file and cREXX code in a `.crexx` file.
+- **Assign a variable before a conditional if you read it afterward.**
+  A variable first assigned inside a `DO` block belongs to that block
+  when no enclosing scope has it, so two sibling `DO` blocks that assign
+  `x` create two variables, and a read after them refers to a third. The
+  compiler warns `NOT_IN_SAME_SCOPE`.
 
-cREXX names its language surfaces as levels. Level B is the supported
-language: source files normally begin with `options levelb` and use the
-extension `.crexx`; values have types (`.string`, `.int`, `.float`,
-`.decimal`, `.boolean`, `.binary`, `.object`, `.void`); arrays are
-declared from typed values (`.string[]`); modules use `namespace`,
-`import`, and `expose`; and procedure signatures are checked by the
-compiler. Level G adds tasks and `DO PARALLEL` behind `OPTIONS LEVELG`
-and is experimental. Level C, Classic Rexx compatibility, is not yet a
-release language: a subset of Classic Rexx is lowered into Level B, and
-a construct outside that subset is rejected with an
-unsupported-shape diagnostic instead of being run. Levels E (ooRexx)
-and N (NetRexx) are targets for syntax highlighting only; cREXX does not
-run ooRexx or NetRexx source.
-
-### Variables first assigned inside a DO block have block scope
-
-In Classic Rexx a block does not scope variables, so a variable assigned
-in either branch of an `IF` is the same variable afterward. In Level B, a
-variable that is first assigned inside a `DO` block and has
-no counterpart in an enclosing scope belongs to that block. Two sibling
-`DO` blocks that each assign `x` therefore create two different
-variables, and a read of `x` after the blocks refers to a third.
-
-```rexx
-/* Classic Rexx: one x, whichever branch ran */
-if flag = "1" then do
-  x = "from-if"
-end
-else do
-  x = "from-else"
-end
-say x            /* from-if or from-else */
-```
-
-The same code compiled as Level B assigns to block-local variables and
-the compiler warns `NOT_IN_SAME_SCOPE` for the read after the blocks. To
-get Classic behavior, introduce the variable before the conditional:
-
-```crexx-b
-options levelb
-import rxfnsb
-
-Foo: procedure = .string
-  arg flag = .string
-  x = .string              /* declared in the procedure's own scope */
+  ```crexx-b
+  x = .string              /* before the conditional */
   if flag = "1" then do
     x = "from-if"
   end
@@ -1977,49 +1939,17 @@ Foo: procedure = .string
     x = "from-else"
   end
   return x
-```
+  ```
 
-The block rule applies to `DO` blocks. A single-instruction branch
-(`if cond then x = 10`, with no `DO`) is handled differently by design:
-an untyped assignment there binds directly to, and updates, the variable
-in the enclosing scope, including a module-global one.
-
-### `PROCEDURE EXPOSE` and `ARG EXPOSE` do not mean what they mean in Classic Rexx
-
-In Classic Rexx, `PROCEDURE EXPOSE` makes named variables of the caller
-visible to the called routine. In Level B it means something else:
-`PROCEDURE EXPOSE` gives the procedure access to *module-global*
-variables, listed by name, and a procedure that does not list a global
-variable does not see it unless the module's `NAMESPACE ... EXPOSE`
-list also names it.
-
-Level B provides `ARG EXPOSE` for updating a caller's variable: a plain
-`arg name = type` parameter is passed by value, and a parameter declared
-with `expose` is passed by reference.
-
-```crexx-b
-bump: procedure = .void
-  arg expose value = .int   /* by reference: updates the caller's variable */
-  value = value + 1
-  return
-```
-
-Code that reads like Classic Rexx, and that uses either keyword to share
-state, will compile in Level B and share different variables.
-
-### What does not carry over
-
-- This article's guidance about the TSO/E and CMS environments, their
-  variable pools, `EXECIO`, and `PARSE SOURCE` results does not apply
-  to cREXX Level B. The cREXX port to z/OS is experimental; integration with
-  IBM REXX variable pools and general `ADDRESS TSO` commands is not yet
-  available in it.
-- Values have types and procedure signatures are checked by the
-  compiler, so a mismatch that Classic Rexx would surface at run time, or
-  never, can be a compile-time error.
-- The classic-Rexx constructs recommended for portability elsewhere in
-  this article are not guaranteed to compile as Level B. Test any code
-  meant to run under cREXX with the cREXX compiler.
+- **Do not use `PROCEDURE EXPOSE` to share a caller's variables.** In
+  Level B it names module-global variables, not the caller's. To let a
+  procedure update a caller's variable, declare the parameter
+  `arg expose name = type`, which passes it by reference; a plain
+  `arg name = type` passes by value. In code that must also run under
+  another dialect, pass and return values instead of sharing state.
+- **Do not port TSO/E or CMS environment code unchanged.** The cREXX
+  port to z/OS is experimental, and integration with IBM REXX variable
+  pools and general `ADDRESS TSO` commands is not yet available in it.
 
 ---
 
