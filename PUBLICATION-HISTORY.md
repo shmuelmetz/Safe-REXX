@@ -178,7 +178,7 @@ maintenance history, not a single article that then sat still:
   or Will They Still Respect My Code in the Morning?", *Technical
   Support* (1995).
 - Outside technical input incorporated into revisions even from casual
-  correspondents, e.g. an Amiga ARexx user's explanation of why most
+  correspondents, e.g., an Amiga ARexx user's explanation of why most
   ARexx code isn't portable (tied to the Amiga's pre-emptive
   multitasking model).
 - `F805 (CPCUG)` is otherwise membership/BBS-access correspondence with
@@ -189,7 +189,7 @@ maintenance history, not a single article that then sat still:
   membership). A keyword search of the surviving ACM mail folder
   itself (`F005`, 69 files) turned up no Safe REXX correspondence, but
   the `shmuel@acm.org` address was actively used for it elsewhere —
-  e.g. a reader's direct request for a copy, filed under a "Misc"
+  e.g., a reader's direct request for a copy, filed under a "Misc"
   folder rather than under ACM.
 
 ## Sourcing note
