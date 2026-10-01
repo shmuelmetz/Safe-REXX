@@ -54,6 +54,7 @@ permission is prohibited.
    - [Labels and SIGNAL](#labels-and-signal)
    - [Parsing](#parsing)
    - [Scoping rules](#scoping-rules)
+   - [Comparison operators: numeric versus character](#comparison-operators)
    - [Type and range checking](#type-and-range-checking)
    - [Dropped symbols used as constants](#dropped-symbols)
    - [Variable references](#variable-references)
@@ -1359,6 +1360,45 @@ dangerous practice, and should be avoided.
 > child process with no trap set up, the ordinary consequence of any
 > uncaught error applies (non-zero return code, diagnostic on stderr)
 > — nothing special about this particular error in that respect.
+
+### <a id="comparison-operators"></a>Comparison operators: numeric versus character
+
+Comparison operators split along the same numeric/character line as
+arithmetic: `=`, `\=`, `<`, `>`, `<=`, `>=`, and their relatives
+perform a numeric comparison when both operands are valid numbers, and
+fall back to a blank-padded character comparison otherwise. The strict
+operators (`==`, `\==`, `>>`, `<<`, and their relatives) never perform
+the numeric comparison — character by character, no padding, no
+exception for operands that happen to look numeric.
+
+```rexx
+say '0010' = '10'      /* 1 -- both are valid numbers: numeric comparison */
+say '0010' == '10'     /* 0 -- strict: different length, different characters */
+say ' 10 ' = '10'      /* 1 -- numeric comparison ignores the whitespace */
+say ' 10 ' == '10'     /* 0 -- strict: no padding at all */
+say 'v10' = 'v2'       /* 0 -- neither operand is itself a number, so this
+                           is a character comparison: 'v10' < 'v2' because
+                           the character '1' sorts below '2' */
+```
+
+That last line is the trap: an identifier, version string, or part
+number that merely contains digits does not get numeric comparison —
+the whole operand must itself be a valid Rexx number. Sorting or
+comparing such values with the ordinary operators falls through to
+character order the moment any non-numeric character is present.
+
+> **ooRexx note**: this numeric/character duality belongs to the
+> comparison *operators*, not to ooRexx's collection-sorting
+> machinery. The default comparator behind `~sort` and related
+> Collection methods performs a plain character comparison
+> unconditionally, even when every value being sorted is itself a
+> valid number: sorting the Stem tails `2 3 10 25` with `~sort`
+> returns `10, 2, 25, 3` — character order, not numeric order — the
+> same rule that puts `'v10'` below `'v2'` above, not the rule that
+> makes the bare expression `2 = 10` false numerically. Supply a
+> numeric-aware comparator — a `.Comparator` subclass whose `compare`
+> method subtracts rather than compares strings — when a collection's
+> values need numeric sort order.
 
 ### <a id="type-and-range-checking"></a>Type and range checking
 
