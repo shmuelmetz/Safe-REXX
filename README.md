@@ -1,7 +1,7 @@
 # Safe-REXX
 
 Merged and updated edition of *Safe REXX on the Desktop* (1993/1995)
-and *Safe REXX in the Enterprise* (1993/2023) by Shmuel (Seymour J.) Metz.
+and *Safe REXX in the Enterprise* (1993/2023) by Seymour J. Metz (H: Shmuel שמואל בן לייביש ולאה).
 
 Scope: platforms and dialects in current use: TSO/E REXX (the only
 REXX on z/OS, running under TSO, ISPF, the OMVS shell, batch, and

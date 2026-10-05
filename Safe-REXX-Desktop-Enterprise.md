@@ -1,6 +1,6 @@
 # Safe REXX in the Enterprise and on the Desktop, or Will They Still Respect My Code in the Morning?
 
-by Shmuel (Seymour J.) Metz (שמואל בן לייביש ולאה)
+by Seymour J. Metz (H: Shmuel שמואל בן לייביש ולאה)
 
 ## Publication history
 
@@ -20,8 +20,7 @@ Classic REXX, Object REXX, ooRexx, Regina.
 The current source of this document, including its revision history,
 is maintained at <https://github.com/shmuelmetz/Safe-REXX>.
 
-Copyright 1993, 1998, 2023, 2026 by Shmuel (Seymour J.) Metz
-(שמואל בן לייביש ולאה). All rights
+Copyright 1993, 1998, 2023, 2026 by Seymour J. Metz (H: Shmuel שמואל בן לייביש ולאה). All rights
 reserved. Permission for reproduction in whole or in part is hereby
 granted to educational, non-profit and computer user groups for
 internal, non-profit use, provided credit is given and this notice is
@@ -2084,7 +2083,7 @@ source articles for this edition appeared in print in the 1990s; the
 
 ## <a id="about-the-author"></a>About the author
 
-Shmuel (Seymour J.) Metz (שמואל בן לייביש ולאה). Mr. Metz is a Senior MVS Systems Programmer
+Seymour J. Metz (H: Shmuel שמואל בן לייביש ולאה). Mr. Metz is a Senior MVS Systems Programmer
 supporting a Federal Government contract. He has worked with
 computers for over half a century. He has been involved in the
 development of two different operating systems. He has experience on
