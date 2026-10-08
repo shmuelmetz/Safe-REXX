@@ -2061,7 +2061,7 @@ directly by me.
 - ISPF Dialog Developer's Guide and Reference, IBM Corp., SC34-4821 (does not independently state the REXX host command environment list for ISPF; see the TSO/E REXX Reference above for that)
 - z/OS Using REXX and z/OS UNIX System Services, IBM Corp., SA23-2283 (documents TSO/E REXX's behavior in the OMVS shell separately from the TSO/E REXX Reference above)
 - z/OS MVS Programming: Authorized Assembler Services Guide, IBM Corp., SA23-1371 (current z/OS 3.2 edition, SA23-1371-70) — the System REXX chapter documents the `AXREXX` macro, `MODIFY AXR`/`SYSREXX` operator commands, the `AXR`/`AXR01`–`AXR08` address-space structure, the `REXXLIB` A–I exec-name reservation, and console-directed `SAY`/`TRACE` output; a separate manual from the REXX Reference above, which does not cover System REXX at all
-- z/VM REXX/VM Reference, IBM Corp., current z/VM 7.4 edition, SC24-6314-74, <https://www.vm.ibm.com/library/740pdfs/74631400.pdf>
+- z/VM REXX/VM Reference, IBM Corp., current z/VM 7.4 edition, SC24-6314-74, <https://www.ibm.com/support/pages/zvm/library/740pdfs/74631400.pdf>
 - The REXX Language: A Practical Approach to Programming, 2nd Edition. By Michael F. Cowlishaw (Prentice-Hall, Inc., a division of Simon & Schuster), Englewood Cliffs, New Jersey 07632, ISBN 0-13-780651-5
 - Rexx brief history, Michael F. Cowlishaw, <https://speleotrove.com/rexxhist/rexxhistory.html> (source for the REX-to-REXX naming history and early VM/SP release dates)
 - Open Object Rexx (ooRexx) Reference, The RexxLA/Open Object Rexx project, <https://www.oorexx.org/>
