@@ -2053,7 +2053,7 @@ directly by me.
 - Object REXX Reference, IBM Corp. (the OS/2 edition of the manual for OREXX, IBM's cross-platform Object REXX for OS/2, Windows, and AIX, and the precursor to ooRexx); also consulted directly: Object REXX for Windows Reference, Version 2.1, SH12-6725-00, and Object REXX for AIX Reference, Version 1.1.3, SH12-6386-01 — the RexxUtil repertoire differs by edition, notably the Workplace-Shell-specific functions (OS/2 only) and the Unix process functions (AIX only)
 - *The Regina Rexx Interpreter*, Mark Hessling (the core interpreter reference, covering `PARSE VERSION` output and ANSI compliance level), <https://regina-rexx.sourceforge.io/>
 - Regina REXX RegUtil Reference (the RexxUtil-equivalent package bundled with Regina), <https://regina-rexx.sourceforge.io/>
-- *Open Object Rexx Reference*, RexxLA, <https://www.oorexx.org/docs/rexxref/>
+- *Open Object Rexx Reference*, release 5.2.0, RexxLA, <https://sourceforge.net/projects/oorexx/files/oorexx-docs/5.2.0/rexxref.pdf>
 - TSO Extensions Version 2 REXX Reference / z/OS TSO/E REXX Reference, SC28-1883 / SA32-0972 (three editions consulted: SC28-1883-0, December 1988; SC28-1883-4, August 1991; and the current z/OS 3.2 edition, SA32-0972-70, <https://www.ibm.com/docs/en/SSLTBW_3.2.0/pdf/ikja300_v3r2.pdf> — the earliest documents a noticeably smaller host command environment table than the other two, which agree word for word)
 - TSO Extensions Version 2 REXX User's Guide, SC28-1882
 - TSO/E Command Reference, IBM Corp., SC28-1969 (documents `EDIT` and `TEST` as TSO commands, including the specific `EXEC` subcommand behavior each imposes on a REXX exec it launches — a separate manual from the REXX Reference above, which does not cover either command)
