@@ -443,7 +443,7 @@ platform matters:
   case-sensitive on Linux but case-insensitive on Windows.
 
 > **ooRexx note**: for case-insensitive comparisons generally, not just
-> the platform-specific cases above, ooRexx's `.String` class provides a
+> the platform-specific cases above, ooRexx 5.2's `.String` class provides a
 > `caseless`-prefixed method family directly — `caselessEquals`,
 > `caselessCompare`, `caselessPos`, `caselessCountStr`,
 > `caselessChangeStr`, `caselessAbbrev`, `caselessMatch`,
@@ -456,7 +456,10 @@ platform matters:
 > documents no abbreviated form for it), neither `LOWER` nor `CASELESS`
 > appears anywhere in the ANSI text: both are extensions, present in
 > ooRexx and Regina alike but absent from TRL-2-level classic Rexx and
-> from the ANSI standard itself.
+> from the ANSI standard itself. OREXX has `PARSE LOWER` and `CASELESS`
+> but none of the `caseless` methods (calling one raises Error 97); an exec
+> that may run under OREXX compares `~translate` results with `==`
+> instead.
 
 ### <a id="io-model"></a>I/O model
 
