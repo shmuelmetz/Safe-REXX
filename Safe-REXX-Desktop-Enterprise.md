@@ -754,6 +754,11 @@ and `SysQueryProcess` are present in all three; `SysFileTree` and
 `SysQueryProcess` each behave differently across platforms, so test
 them on each target rather than assuming identical semantics.
 
+`SysFileTree`'s result argument also differs: ooRexx 5 accepts an Array
+as well as a stem, but OREXX accepts only a stem, setting `stem.0` to the
+number of matches and storing them in `stem.1` onward. An exec that may
+run on OREXX passes a stem.
+
 A blanket "is RexxUtil loaded?" check, whether via Figure 12's flag or
 `RxFuncQuery('SysLoadFuncs')`, only tells you the package itself
 loaded — it says nothing about whether the *specific* function you're
