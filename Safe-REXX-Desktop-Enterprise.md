@@ -408,6 +408,32 @@ claims elsewhere in this edition are — OREXX has been out of IBM
 support for many years, and no live copy was available to verify
 behavior against while preparing this edition.
 
+#### OREXX lacks later collection methods, and its built-in classes are closed
+
+OREXX predates many ooRexx methods. Its Array class, for one, has no
+`APPEND` method, so `arr~append(item)` fails under OREXX. OREXX also
+does not permit changes or additions to the method definitions of the
+classes REXX provides, so `.Array~define('APPEND', ...)` is not a way
+out. Code that must run under both should define a subclass that
+supplies the missing method, and create its collections from that
+subclass:
+
+```ooRexx
+list = .AppendArray~new
+list~append('first')
+
+::class AppendArray subclass Array
+::method append                -- OREXX's Array has no APPEND
+  use arg item
+  n = self~last
+  if n == .nil then n = 0
+  self~put(item, n + 1)
+  return n + 1
+```
+
+Under ooRexx the subclass's `APPEND` overrides Array's own with the
+same behavior, so one source runs under both.
+
 ### <a id="environmental-factors"></a>Environmental factors
 
 REXX does not shield you from the underlying environment; in writing
